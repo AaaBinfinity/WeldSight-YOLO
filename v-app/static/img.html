@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>图片检测</title>
+  <style>
+    /* 基础样式重置 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* 页面布局 */
+    body {
+      min-height: 100vh;
+      background: #f0f2f5;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      color: #333;
+    }
+
+    /* 标题样式 */
+    h2 {
+      color: #2c3e50;
+      font-size: 1.8rem;
+      margin: 1.5rem 0 2rem;
+      padding-bottom: 0.8rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    h2::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 3px;
+      background: #3498db;
+      border-radius: 2px;
+    }
+
+    /* 上传区域样式 */
+    .upload-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 2rem;
+    }
+
+    /* 文件选择框样式 */
+    #imgfile {
+      display: none;
+    }
+
+    .file-label {
+      display: inline-block;
+      padding: 0.8rem 1.5rem;
+      border: 2px dashed #bdc3c7;
+      border-radius: 6px;
+      background: white;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-right: 1rem;
+    }
+
+    .file-label:hover {
+      border-color: #3498db;
+      color: #3498db;
+    }
+
+    /* 按钮样式 */
+    #btnImg {
+      padding: 0.8rem 1.8rem;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #btnImg:hover {
+      background: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+    }
+
+    #btnImg:active {
+      transform: translateY(0);
+    }
+
+    /* 图片显示区域 */
+    .result-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 2rem;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #imgRes {
+      max-width: 100%;
+      max-height: 600px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    #imgRes:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    /* 返回链接样式 */
+    .back-link {
+      display: inline-block;
+      margin-top: 1rem;
+      color: #3498db;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .back-link:hover {
+      color: #2980b9;
+      text-decoration: underline;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      .upload-container,
+      .result-container {
+        padding: 1.5rem;
+      }
+
+      .file-label,
+      #btnImg {
+        display: block;
+        width: 100%;
+        margin: 0 0 1rem 0;
+        text-align: center;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>单张图片检测</h2>
+  
+  <div class="upload-container">
+    <label for="imgfile" class="file-label">选择图片文件</label>
+    <input id="imgfile" type="file" accept="image/*" />
+    <button id="btnImg">上传并检测</button>
+  </div>
+  
+  <div class="result-container">
+    <img id="imgRes" style="max-width:90%;" />
+  </div>
+  
+  <p><a href="index.html" class="back-link">返回首页</a></p>
+
+  <script>
+    document.getElementById('btnImg').onclick = async () => {
+      const f = document.getElementById('imgfile').files[0];
+      if (!f) return alert('请选择图片');
+      
+      // 显示加载状态
+      const btn = document.getElementById('btnImg');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '检测中...';
+      
+      try {
+        const fd = new FormData();
+        fd.append('image', f);
+        const res = await fetch('/detect_image', { method: 'POST', body: fd });
+        
+        if (!res.ok) throw new Error('服务器错误');
+        
+        const blob = await res.blob();
+        document.getElementById('imgRes').src = URL.createObjectURL(blob);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        // 恢复按钮状态
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    // 显示选中的文件名
+    document.getElementById('imgfile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        document.querySelector('.file-label').textContent = `已选择: ${file.name}`;
+      }
+    });
+  </script>
+</body>
+</html>

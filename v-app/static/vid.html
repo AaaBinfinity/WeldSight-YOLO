@@ -1,0 +1,376 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>视频检测 - 上传处理</title>
+  <style>
+    body {
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 20px;
+      background: #f5f7fa;
+      color: #333;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h2 { 
+      color: #2c3e50; 
+      margin-bottom: 30px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #3498db;
+    }
+    .upload-area {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      margin-bottom: 30px;
+    }
+    .file-input {
+      margin: 15px 0 20px;
+      padding: 10px;
+      border: 2px dashed #ddd;
+      border-radius: 6px;
+      transition: border-color 0.3s;
+    }
+    .file-input:hover {
+      border-color: #3498db;
+    }
+    input[type="file"] {
+      font-size: 14px;
+      color: #555;
+      margin: 10px 0;
+    }
+    button {
+      padding: 9px 18px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: none;
+      background-color: #3498db;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin: 5px;
+    }
+    button:hover { 
+      background-color: #2980b9; 
+    }
+    button:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+    }
+    #loading {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 16px;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      padding: 20px 30px;
+      border-radius: 10px;
+      z-index: 1000;
+      min-width: 250px;
+    }
+    .spinner {
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    #vidLink { 
+      margin-top: 20px; 
+      font-size: 14px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      display: none; /* 默认隐藏，处理完成后显示 */
+    }
+    #progressBar {
+      width: 100%;
+      max-width: 500px;
+      height: 24px;
+      background: #eee;
+      border-radius: 12px;
+      margin: 15px auto;
+      overflow: hidden;
+      display: none;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    #progressFill {
+      height: 100%;
+      width: 0%;
+      background: #3498db;
+      border-radius: 12px;
+      text-align: center;
+      color: #fff;
+      line-height: 24px;
+      font-size: 13px;
+      transition: width 0.3s ease;
+    }
+    .status-text {
+      margin: 10px 0;
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    .status-text.error {
+      color: #e74c3c;
+    }
+    .status-text.success {
+      color: #27ae60;
+    }
+    .home-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 8px 16px;
+      background: #f1f5f9;
+      color: #3498db;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    .home-link:hover {
+      background: #e2e8f0;
+      text-decoration: none;
+    }
+    video {
+      max-width: 100%;
+      border-radius: 6px;
+      margin-top: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>上传视频检测</h2>
+    
+    <div class="upload-area">
+      <div class="file-input">
+        <input id="vidfile" type="file" accept="video/*" />
+      </div>
+      
+      <button id="btnVid">上传并处理</button>
+      <button id="btnCancel" disabled>取消处理</button>
+      
+      <div class="status-text" id="processStatus">请选择视频文件后点击"上传并处理"</div>
+      
+      <div id="progressBar">
+        <div id="progressFill">0%</div>
+      </div>
+      
+      <div id="vidLink"></div>
+    </div>
+    
+    <div id="loading">
+      <span class="spinner"></span>
+      <span id="loadingText">处理中，请稍候...</span>
+    </div>
+    
+    <a href="index.html" class="home-link">返回首页</a>
+  </div>
+
+  <script>
+    const loading = document.getElementById('loading');
+    const loadingText = document.getElementById('loadingText');
+    const vidLink = document.getElementById('vidLink');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const processStatus = document.getElementById('processStatus');
+    const btnVid = document.getElementById('btnVid');
+    const btnCancel = document.getElementById('btnCancel');
+    const vidfile = document.getElementById('vidfile');
+    
+    let pollInterval = null; // 轮询计时器
+    let abortController = null; // 用于取消上传请求
+
+    // 取消处理
+    function cancelProcess() {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+      if (abortController) {
+        abortController.abort(); // 取消上传请求
+      }
+      
+      // 重置状态
+      resetUI();
+      processStatus.textContent = '已取消处理';
+      processStatus.className = 'status-text';
+    }
+
+    // 重置UI状态
+    function resetUI() {
+      loading.style.display = 'none';
+      progressBar.style.display = 'none';
+      vidLink.style.display = 'none';
+      progressFill.style.width = '0%';
+      progressFill.innerText = '0%';
+      btnVid.disabled = false;
+      btnCancel.disabled = true;
+    }
+
+    // 处理视频上传和进度轮询
+    document.getElementById('btnVid').onclick = async () => {
+      const file = document.getElementById('vidfile').files[0];
+      if (!file) {
+        processStatus.textContent = '请先选择一个视频文件';
+        processStatus.className = 'status-text error';
+        return;
+      }
+
+      // 验证视频格式（支持常见格式，适配后端XVID编码）
+      const validTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/flv', 'video/mpeg'];
+      if (!validTypes.includes(file.type)) {
+        processStatus.textContent = '不支持的视频格式，请上传MP4、AVI、MOV等常见格式';
+        processStatus.className = 'status-text error';
+        return;
+      }
+
+      // 验证文件大小（限制500MB以内，避免处理超时）
+      const maxSize = 500 * 1024 * 1024; // 500MB
+      if (file.size > maxSize) {
+        processStatus.textContent = '视频文件过大（最大支持500MB）';
+        processStatus.className = 'status-text error';
+        return;
+      }
+
+      // 准备表单数据
+      const formData = new FormData();
+      formData.append('video', file);
+
+      // 更新UI状态
+      resetUI();
+      loading.style.display = 'block';
+      loadingText.textContent = '上传中...';
+      progressBar.style.display = 'block';
+      btnVid.disabled = true;
+      btnCancel.disabled = false;
+      processStatus.textContent = `正在上传视频: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`;
+      processStatus.className = 'status-text';
+
+      try {
+        // 创建可取消的请求控制器
+        abortController = new AbortController();
+        
+        // 上传视频（关联取消信号）
+        const res = await fetch('/upload_video', { 
+          method: 'POST', 
+          body: formData,
+          signal: abortController.signal
+        });
+
+        if (!res.ok) {
+          throw new Error(`上传失败: ${res.statusText}`);
+        }
+
+        const json = await res.json();
+        if (!json.success) {
+          throw new Error(json.error || '服务器处理失败');
+        }
+
+        const { filename, url } = json;
+        loadingText.textContent = '处理中，请稍候...';
+        processStatus.textContent = `视频上传完成，正在检测处理: ${filename}`;
+
+        // 轮询进度（1秒/次，平衡实时性和服务器压力）
+        pollInterval = setInterval(async () => {
+          try {
+            const progRes = await fetch(`/video_progress?filename=${filename}&t=${Date.now()}`);
+            if (!progRes.ok) {
+              throw new Error(`获取进度失败: ${progRes.statusText}`);
+            }
+            
+            const progJson = await progRes.json();
+            const { progress, status } = progJson;
+
+            // 更新进度条
+            progressFill.style.width = `${progress}%`;
+            progressFill.innerText = `${progress}%`;
+
+            // 处理不同状态
+            switch(status) {
+              case 'waiting':
+                processStatus.textContent = '等待处理队列...';
+                break;
+              case 'processing':
+                processStatus.textContent = `正在处理: ${progress}%`;
+                break;
+              case 'completed':
+                processStatus.textContent = '处理完成！';
+                processStatus.className = 'status-text success';
+                // 显示结果（适配AVI格式视频预览）
+                vidLink.innerHTML = `
+                  <a href="${url}" target="_blank" download>处理后视频（点击下载）</a><br>
+                `;
+                vidLink.style.display = 'block';
+                // 清理资源
+                clearInterval(pollInterval);
+                pollInterval = null;
+                loading.style.display = 'none';
+                btnCancel.disabled = true;
+                break;
+              case 'failed':
+                throw new Error('视频处理失败（编码或格式错误）');
+              default:
+                processStatus.textContent = `处理中: ${progress}%`;
+            }
+
+          } catch (err) {
+            // 捕获轮询错误
+            clearInterval(pollInterval);
+            pollInterval = null;
+            loading.style.display = 'none';
+            processStatus.textContent = `获取进度失败: ${err.message}`;
+            processStatus.className = 'status-text error';
+            btnCancel.disabled = true;
+          }
+        }, 1000);
+
+      } catch (err) {
+        // 捕获上传错误
+        loading.style.display = 'none';
+        processStatus.textContent = `上传失败: ${err.message}`;
+        processStatus.className = 'status-text error';
+        btnVid.disabled = false;
+        btnCancel.disabled = true;
+      }
+    }
+
+    // 绑定取消按钮事件
+    btnCancel.addEventListener('click', cancelProcess);
+
+    // 监听文件选择变化，更新状态
+    vidfile.addEventListener('change', () => {
+      const file = vidfile.files[0];
+      if (file) {
+        processStatus.textContent = `已选择: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`;
+        processStatus.className = 'status-text';
+      } else {
+        processStatus.textContent = '请选择视频文件后点击"上传并处理"';
+        processStatus.className = 'status-text';
+      }
+    });
+
+    // 页面关闭时清理轮询
+    window.addEventListener('beforeunload', () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    });
+  </script>
+</body>
+</html>

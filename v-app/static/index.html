@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>焊缝缺陷检测 Demo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<style>
+  /* 基础样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 页面背景与布局 */
+body {
+  min-height: 100vh;
+  background: #f0f2f5;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* 标题样式 */
+h1 {
+  color: #2c3e50;
+  font-size: 2.2rem;
+  margin-bottom: 2.5rem;
+  position: relative;
+  text-align: center;
+  padding-bottom: 0.8rem;
+}
+
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 4px;
+  background: #3498db;
+  border-radius: 2px;
+}
+
+/* 导航列表样式 */
+ul {
+  list-style: none;
+  width: 100%;
+  max-width: 500px;
+}
+
+ul li {
+  margin: 1rem 0;
+}
+
+/* 链接按钮样式 */
+ul li a {
+  display: block;
+  padding: 1.2rem 1.5rem;
+  background: white;
+  color: #2c3e50;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 链接悬停效果 */
+ul li a:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  color: #3498db;
+}
+
+/* 链接前的序号样式 */
+ul li a::before {
+  content: attr(data-number);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50px;
+  height: 100%;
+  background: #3498db;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: width 0.3s ease;
+}
+
+/* 调整链接文本位置，为序号留出空间 */
+ul li a {
+  padding-left: 65px;
+}
+
+/* 响应式设计 */
+@media (max-width: 600px) {
+  body {
+    padding: 1rem;
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  ul li a {
+    font-size: 1rem;
+    padding: 1rem;
+    padding-left: 55px;
+  }
+  
+  ul li a::before {
+    width: 40px;
+  }
+}
+</style>
+<body>
+  <h1>焊缝缺陷检测（YOLOv11）</h1>
+  <ul>
+    <li><a href="img.html" data-number="1">单张图片检测</a></li>
+    <li><a href="vid.html" data-number="2">上传视频检测</a></li>
+    <li><a href="cam.html" data-number="3">摄像头实时检测</a></li>
+  </ul>
+</body>
+</html>

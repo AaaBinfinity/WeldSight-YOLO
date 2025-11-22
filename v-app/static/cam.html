@@ -1,0 +1,374 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>摄像头实时检测</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* 补充页面专属样式（若style.css未包含） */
+    body {
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 20px;
+      background: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    h2 {
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 8px;
+      margin-bottom: 25px;
+    }
+    .control-panel {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .control-panel label {
+      font-weight: 500;
+      color: #555;
+    }
+    #camSelect {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      min-width: 200px;
+      font-size: 14px;
+    }
+    .btn {
+      padding: 9px 18px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn-start {
+      background: #2ecc71;
+      color: #fff;
+    }
+    .btn-start:hover {
+      background: #27ae60;
+    }
+    .btn-stop {
+      background: #e74c3c;
+      color: #fff;
+    }
+    .btn-stop:hover {
+      background: #c0392b;
+    }
+    .btn:disabled {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+    .preview-container {
+      position: relative;
+      display: inline-block;
+      margin-top: 10px;
+      border: 3px solid #fff;
+      border-radius: 8px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+      background: #000;
+    }
+    #camImg {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    /* 检测报警闪烁效果优化 */
+    #flash {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 50, 50, 0.3);
+      pointer-events: none;
+      mix-blend-mode: screen;
+      animation: flash 0.4s ease-in-out;
+    }
+    @keyframes flash {
+      0% { opacity: 0; }
+      50% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .sound-control {
+      margin-top: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #enableSound {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .home-link {
+      display: inline-block;
+      margin-top: 25px;
+      padding: 8px 16px; 
+      color: #003057bd;
+      border-radius: 6px;
+      text-decoration: none;
+    } 
+    /* 状态提示文本 */
+    .status-text {
+      margin-top: 10px;
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    .status-text.error {
+      color: #e74c3c;
+    }
+    .status-text.success {
+      color: #27ae60;
+    }
+  </style>
+</head>
+<body>
+  <h2>摄像头实时检测</h2>
+
+  <!-- 控制面板：摄像头选择 + 启停按钮 -->
+  <div class="control-panel">
+    <label>选择摄像头：</label>
+    <select id="camSelect"></select>
+    
+    <button id="btnStart" class="btn btn-start">启动检测</button>
+    <button id="btnStop" class="btn btn-stop" disabled>停止检测</button>
+    
+    <!-- 状态提示 -->
+    <div id="camStatus" class="status-text">未启动检测，请选择摄像头并点击"启动检测"</div>
+  </div>
+
+  <!-- 摄像头预览区域（带报警闪烁） -->
+  <div class="preview-container">
+    <img id="camImg" src="placeholder.png" alt="摄像头预览（未启动）" />
+    <!-- 检测到目标时的闪烁层 -->
+    <div id="flash"></div>
+  </div>
+
+  <!-- 报警声音控制 -->
+  <div class="sound-control">
+    <label>启用报警声音：</label>
+    <input type="checkbox" id="enableSound" checked />
+  </div>
+
+  <!-- 音频元素（修复自动播放限制） -->
+  <audio id="alarmSound" src="alarm_beep.wav" preload="auto" muted>
+    您的浏览器不支持音频播放，请更新浏览器
+  </audio>
+
+  <!-- 返回首页链接 -->
+  <a href="index.html" class="home-link">返回首页</a>
+
+  <script>
+    let selectedCam = 0;
+    let camRunning = false; // 标记摄像头是否正在运行
+    let alarmSound = document.getElementById('alarmSound');
+    let flashLayer = document.getElementById('flash');
+    let camStatusText = document.getElementById('camStatus');
+    let btnStart = document.getElementById('btnStart');
+    let btnStop = document.getElementById('btnStop');
+    let camImg = document.getElementById('camImg');
+
+    // 1. 初始化：获取可用摄像头列表
+    async function listCams() {
+      try {
+        // 请求摄像头权限（避免后续启动失败）
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop()); // 临时流，仅用于获取设备列表
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        const camSelect = document.getElementById('camSelect');
+        
+        if (videoDevices.length === 0) {
+          // 无可用摄像头
+          camSelect.innerHTML = '<option value="-1">无可用摄像头</option>';
+          btnStart.disabled = true;
+          updateCamStatus('未检测到可用摄像头，请连接摄像头后刷新页面', 'error');
+          return;
+        }
+
+        // 填充摄像头选项
+        camSelect.innerHTML = '';
+        videoDevices.forEach((device, index) => {
+          const opt = document.createElement('option');
+          opt.value = index;
+          opt.textContent = device.label || `摄像头 ${index + 1}`; // 更友好的命名
+          camSelect.appendChild(opt);
+        });
+        selectedCam = 0; // 默认选择第一个摄像头
+      } catch (err) {
+        // 权限被拒绝或获取设备失败
+        console.error('获取摄像头列表失败：', err);
+        document.getElementById('camSelect').innerHTML = '<option value="-1">无法获取摄像头（权限被拒绝）</option>';
+        btnStart.disabled = true;
+        updateCamStatus(`获取摄像头失败：${err.message}`, 'error');
+      }
+    }
+
+    // 2. 更新摄像头状态文本
+    function updateCamStatus(text, type = 'default') {
+      camStatusText.textContent = text;
+      camStatusText.className = `status-text ${type}`;
+    }
+
+    // 3. 轮询摄像头检测状态（优化频率，避免性能问题）
+    async function pollCamStatus() {
+      if (!camRunning) return; // 摄像头未运行时停止轮询
+
+      try {
+        const res = await fetch(`/cam_status?t=${Date.now()}`); // 加时间戳避免缓存
+        if (!res.ok) throw new Error(`请求失败：${res.status}`);
+        
+        const status = await res.json();
+        
+        if (status.last_detected) {
+          // 检测到目标：触发闪烁和声音
+          triggerAlarm();
+        }
+      } catch (err) {
+        console.error('轮询检测状态失败：', err);
+        if (camRunning) {
+          updateCamStatus('检测状态轮询失败，可能已断开连接', 'error');
+        }
+      }
+
+      // 1秒轮询一次（平衡实时性和性能）
+      setTimeout(pollCamStatus, 1000);
+    }
+
+    // 4. 触发报警（闪烁+声音）
+    function triggerAlarm() {
+      // 闪烁效果（避免重复触发时的叠加）
+      if (flashLayer.style.display === 'block') return;
+      flashLayer.style.display = 'block';
+      setTimeout(() => {
+        flashLayer.style.display = 'none';
+      }, 400); // 与CSS动画时长一致
+
+      // 声音播放（处理浏览器自动播放限制）
+      if (document.getElementById('enableSound').checked) {
+        alarmSound.muted = false;
+        // 修复：先播放再调整音量（部分浏览器需用户交互后才能播放）
+        alarmSound.play().catch(err => {
+          console.warn('音频自动播放被限制，需用户点击页面后重试：', err);
+          updateCamStatus('报警声音播放失败，请点击页面后重试', 'error');
+          alarmSound.muted = true;
+        });
+      }
+    }
+
+    // 5. 启动摄像头检测
+    async function startCamera() {
+      if (selectedCam === -1) {
+        updateCamStatus('请选择可用的摄像头', 'error');
+        return;
+      }
+
+      try {
+        // 调用后端启动摄像头接口
+        const res = await fetch(`/start_cam?index=${selectedCam}`);
+        const data = await res.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || '启动摄像头失败');
+        }
+
+        // 更新状态
+        camRunning = true;
+        camImg.src = `/video_feed?t=${Date.now()}`; // 加时间戳避免缓存
+        camImg.alt = `摄像头${selectedCam + 1}实时预览`;
+        
+        // 更新按钮状态
+        btnStart.disabled = true;
+        btnStop.disabled = false;
+        updateCamStatus(`已启动摄像头${selectedCam + 1}，正在实时检测`, 'success');
+        
+        // 启动状态轮询
+        pollCamStatus();
+
+        // 初始化音频（用户交互后取消静音，解决自动播放限制）
+        alarmSound.muted = !document.getElementById('enableSound').checked;
+      } catch (err) {
+        console.error('启动摄像头失败：', err);
+        updateCamStatus(`启动失败：${err.message}`, 'error');
+        camRunning = false;
+      }
+    }
+
+    // 6. 停止摄像头检测
+    async function stopCamera() {
+      try {
+        // 调用后端停止接口
+        const res = await fetch('/stop_cam');
+        const data = await res.json();
+        
+        if (data.success) {
+          camRunning = false;
+          // 清空预览
+          camImg.src = '';
+          camImg.alt = '摄像头预览（已停止）';
+          // 停止音频
+          alarmSound.pause();
+          alarmSound.currentTime = 0; // 重置音频位置
+          // 更新按钮状态
+          btnStart.disabled = false;
+          btnStop.disabled = true;
+          updateCamStatus('已停止检测，可重新选择摄像头启动', 'default');
+        } else {
+          throw new Error('停止摄像头失败');
+        }
+      } catch (err) {
+        console.error('停止摄像头失败：', err);
+        updateCamStatus(`停止失败：${err.message}`, 'error');
+      }
+    }
+
+    // 事件绑定：摄像头选择变更
+    document.getElementById('camSelect').addEventListener('change', (e) => {
+      selectedCam = parseInt(e.target.value);
+      if (selectedCam === -1) {
+        btnStart.disabled = true;
+        updateCamStatus('无可用摄像头，无法启动检测', 'error');
+      } else if (!camRunning) {
+        btnStart.disabled = false;
+        updateCamStatus(`已选择摄像头${selectedCam + 1}，点击"启动检测"开始`, 'default');
+      }
+    });
+
+    // 事件绑定：启动按钮
+    btnStart.addEventListener('click', startCamera);
+
+    // 事件绑定：停止按钮
+    btnStop.addEventListener('click', stopCamera);
+
+    // 事件绑定：报警声音开关（同步音频静音状态）
+    document.getElementById('enableSound').addEventListener('change', (e) => {
+      alarmSound.muted = !e.target.checked;
+      if (e.target.checked) {
+        updateCamStatus('已启用报警声音', 'success');
+      } else {
+        updateCamStatus('已禁用报警声音', 'default');
+      }
+    });
+
+    // 页面关闭/刷新时：自动停止摄像头（避免资源占用）
+    window.addEventListener('beforeunload', () => {
+      if (camRunning) {
+        navigator.sendBeacon('/stop_cam'); // 可靠发送停止请求
+        alarmSound.pause();
+      }
+    });
+
+    // 初始化：加载摄像头列表
+    listCams();
+  </script>
+</body>
+</html>

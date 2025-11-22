@@ -1,0 +1,7 @@
+path: E:\game\yolo\ultralytics-main\datasets\imgsdataset
+
+train: images/train
+val: images/val
+
+nc: 7 # 类别数
+names: ['01', '02', '03', '04', '05', '06', '07']  # 类别名称
