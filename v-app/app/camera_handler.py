@@ -1,7 +1,7 @@
 import threading
 import time
 import cv2
-from flask import current_app
+from app.inference import render_detections
 
 # 修改：增加 default_cam_index 参数，接收外部传入的默认索引
 def init_camera_global_vars(default_cam_index):
@@ -51,21 +51,18 @@ def camera_loop(cam_index, camera_vars, model, conf_thresh):
 
         # 模型检测（异常捕获）
         try:
-            if model:
-                results = model(frame, conf=conf_thresh, imgsz=640)
-                r = results[0] if results else None
-                rendered_frame = r.plot() if r else frame  # 绘制检测框
-                detected = len(r.boxes) > 0 if r else False
-            else:
-                rendered_frame = frame
-                detected = False
+            rendered_frame, detected = render_detections(
+                model, frame, conf_thresh
+            )
         except Exception as e:
             print(f"❌ 摄像头检测错误: {str(e)}")
             rendered_frame = frame
             detected = False
 
         # 更新最新帧（JPEG格式，减少传输体积）
-        _, jpg_bytes = cv2.imencode('.jpg', rendered_frame)
+        encoded, jpg_bytes = cv2.imencode('.jpg', rendered_frame)
+        if not encoded:
+            continue
         with camera_vars['latest_frame_lock']:
             camera_vars['latest_frame'] = jpg_bytes.tobytes()
 

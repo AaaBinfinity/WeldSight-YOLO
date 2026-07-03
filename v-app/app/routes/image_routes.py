@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from flask import current_app, request, Response, jsonify
 from app.routes import image_bp
+from app.inference import render_detections
 
 @image_bp.route('/detect_image', methods=['POST'])
 def detect_image():
@@ -31,12 +32,17 @@ def detect_image():
     
     # 模型检测与绘制结果
     try:
-        results = current_app.model(frame, conf=current_app.config['CONF_THRESH'], imgsz=640)
-        detected_frame = results[0].plot()  # 绘制检测框
+        detected_frame, _ = render_detections(
+            current_app.model,
+            frame,
+            current_app.config['CONF_THRESH'],
+        )
     except Exception as e:
         print(f"图片检测错误：{e}")
         detected_frame = frame  # 失败时返回原图
     
     # 返回JPEG图片
-    _, jpg_bytes = cv2.imencode('.jpg', detected_frame)
+    encoded, jpg_bytes = cv2.imencode('.jpg', detected_frame)
+    if not encoded:
+        return jsonify({"error": "检测结果编码失败"}), 500
     return Response(jpg_bytes.tobytes(), mimetype='image/jpeg')

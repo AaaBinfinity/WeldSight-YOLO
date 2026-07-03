@@ -2,7 +2,7 @@ import os
 import time
 import threading
 import cv2
-from flask import current_app
+from app.inference import render_detections
 
 def init_video_global_vars():
     """初始化视频处理相关全局变量"""
@@ -10,6 +10,18 @@ def init_video_global_vars():
         'video_progress': {},  # 视频处理进度：{文件名: 进度百分比（-1=失败）}
         'progress_lock': threading.Lock()  # 进度锁
     }
+
+
+def set_video_progress(video_vars, filename, progress):
+    """Update a video's progress while holding the shared lock."""
+    with video_vars['progress_lock']:
+        video_vars['video_progress'][filename] = progress
+
+
+def clear_video_progress(video_vars, filename):
+    """Remove a completed progress entry safely."""
+    with video_vars['progress_lock']:
+        video_vars['video_progress'].pop(filename, None)
 
 def process_video_async(filename, in_path, out_path, video_vars, model, conf_thresh, cache_time):
     """
@@ -26,8 +38,7 @@ def process_video_async(filename, in_path, out_path, video_vars, model, conf_thr
     cap = cv2.VideoCapture(in_path)
     if not cap.isOpened():
         print(f"❌ 无法打开输入视频: {in_path}")
-        with video_vars['progress_lock']:
-            video_vars['video_progress'][filename] = -1  # 标记失败
+        set_video_progress(video_vars, filename, -1)
         return
 
     # 获取视频基础参数（XVID编码要求宽高为偶数）
@@ -42,10 +53,14 @@ def process_video_async(filename, in_path, out_path, video_vars, model, conf_thr
     # 初始化视频写入器（XVID编码+AVI格式，兼容性强）
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out_vid = cv2.VideoWriter(out_path, fourcc, fps, (frame_width, frame_height))
+    if not out_vid.isOpened():
+        cap.release()
+        print(f"❌ 无法创建输出视频: {out_path}")
+        set_video_progress(video_vars, filename, -1)
+        return
 
     # 初始化进度
-    with video_vars['progress_lock']:
-        video_vars['video_progress'][filename] = 0
+    set_video_progress(video_vars, filename, 0)
 
     try:
         frame_idx = 0
@@ -55,12 +70,10 @@ def process_video_async(filename, in_path, out_path, video_vars, model, conf_thr
                 break  # 视频读取完毕
 
             # 模型检测与帧绘制
-            if model:
-                results = model(frame, conf=conf_thresh, imgsz=640)
-                r = results[0]
-                rendered_frame = r.plot()  # 绘制检测框
-            else:
-                rendered_frame = frame  # 无模型时返回原图
+            rendered_frame, _ = render_detections(model, frame, conf_thresh)
+
+            if rendered_frame.shape[1] != frame_width or rendered_frame.shape[0] != frame_height:
+                rendered_frame = cv2.resize(rendered_frame, (frame_width, frame_height))
 
             # 写入输出视频
             out_vid.write(rendered_frame)
@@ -68,20 +81,17 @@ def process_video_async(filename, in_path, out_path, video_vars, model, conf_thr
             # 更新进度（避免超过100%）
             frame_idx += 1
             progress = min(100, int((frame_idx / total_frames) * 100))
-            with video_vars['progress_lock']:
-                video_vars['video_progress'][filename] = progress
+            set_video_progress(video_vars, filename, progress)
 
             time.sleep(0.001)  # 降低CPU占用
 
         # 处理完成，标记100%
-        with video_vars['progress_lock']:
-            video_vars['video_progress'][filename] = 100
+        set_video_progress(video_vars, filename, 100)
         print(f"✅ 视频处理完成: {filename} | 输出路径: {out_path}")
 
     except Exception as e:
         print(f"❌ 视频处理错误 {filename}: {str(e)}")
-        with video_vars['progress_lock']:
-            video_vars['video_progress'][filename] = -1  # 标记失败
+        set_video_progress(video_vars, filename, -1)
 
     finally:
         # 释放资源
@@ -90,7 +100,8 @@ def process_video_async(filename, in_path, out_path, video_vars, model, conf_thr
         # 定时清理进度缓存（避免内存泄漏）
         threading.Timer(
             cache_time,
-            lambda: video_vars['video_progress'].pop(filename, None)
+            clear_video_progress,
+            args=(video_vars, filename),
         ).start()
 
 def sanitize_filename(filename):
