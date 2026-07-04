@@ -1,5 +1,6 @@
 <!doctype html>
 <html>
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,12 +15,14 @@
       color: #333;
       line-height: 1.6;
     }
+
     h2 {
       color: #2c3e50;
       border-bottom: 2px solid #3498db;
       padding-bottom: 8px;
       margin-bottom: 25px;
     }
+
     .control-panel {
       display: flex;
       align-items: center;
@@ -29,12 +32,14 @@
       padding: 15px;
       background: #fff;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
+
     .control-panel label {
       font-weight: 500;
       color: #555;
     }
+
     #camSelect {
       padding: 8px 12px;
       border: 1px solid #ddd;
@@ -42,6 +47,7 @@
       min-width: 200px;
       font-size: 14px;
     }
+
     .btn {
       padding: 9px 18px;
       border: none;
@@ -50,38 +56,46 @@
       cursor: pointer;
       transition: background 0.3s;
     }
+
     .btn-start {
       background: #2ecc71;
       color: #fff;
     }
+
     .btn-start:hover {
       background: #27ae60;
     }
+
     .btn-stop {
       background: #e74c3c;
       color: #fff;
     }
+
     .btn-stop:hover {
       background: #c0392b;
     }
+
     .btn:disabled {
       background: #bdc3c7;
       cursor: not-allowed;
     }
+
     .preview-container {
       position: relative;
       display: inline-block;
       margin-top: 10px;
       border: 3px solid #fff;
       border-radius: 8px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
       background: #000;
     }
+
     #camImg {
       max-width: 100%;
       height: auto;
       display: block;
     }
+
     /* 检测报警闪烁效果优化 */
     #flash {
       display: none;
@@ -92,44 +106,62 @@
       mix-blend-mode: screen;
       animation: flash 0.4s ease-in-out;
     }
+
     @keyframes flash {
-      0% { opacity: 0; }
-      50% { opacity: 1; }
-      100% { opacity: 0; }
+      0% {
+        opacity: 0;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0;
+      }
     }
+
     .sound-control {
       margin-top: 15px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
+
     #enableSound {
       width: 16px;
       height: 16px;
       cursor: pointer;
     }
+
     .home-link {
       display: inline-block;
       margin-top: 25px;
-      padding: 8px 16px; 
+      padding: 8px 16px;
       color: #003057bd;
       border-radius: 6px;
       text-decoration: none;
-    } 
+    }
+
     /* 状态提示文本 */
     .status-text {
       margin-top: 10px;
       color: #7f8c8d;
       font-size: 14px;
     }
+
     .status-text.error {
       color: #e74c3c;
     }
+
     .status-text.success {
       color: #27ae60;
     }
   </style>
+  <link rel="stylesheet" href="app.css" />
+  <script src="ui.js" defer></script>
 </head>
+
 <body>
   <h2>摄像头实时检测</h2>
 
@@ -137,10 +169,10 @@
   <div class="control-panel">
     <label>选择摄像头：</label>
     <select id="camSelect"></select>
-    
+
     <button id="btnStart" class="btn btn-start">启动检测</button>
     <button id="btnStop" class="btn btn-stop" disabled>停止检测</button>
-    
+
     <!-- 状态提示 -->
     <div id="camStatus" class="status-text">未启动检测，请选择摄像头并点击"启动检测"</div>
   </div>
@@ -182,11 +214,11 @@
         // 请求摄像头权限（避免后续启动失败）
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         stream.getTracks().forEach(track => track.stop()); // 临时流，仅用于获取设备列表
-        
+
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(d => d.kind === 'videoinput');
         const camSelect = document.getElementById('camSelect');
-        
+
         if (videoDevices.length === 0) {
           // 无可用摄像头
           camSelect.innerHTML = '<option value="-1">无可用摄像头</option>';
@@ -226,9 +258,9 @@
       try {
         const res = await fetch(`/cam_status?t=${Date.now()}`); // 加时间戳避免缓存
         if (!res.ok) throw new Error(`请求失败：${res.status}`);
-        
+
         const status = await res.json();
-        
+
         if (status.last_detected) {
           // 检测到目标：触发闪烁和声音
           triggerAlarm();
@@ -276,7 +308,7 @@
         // 调用后端启动摄像头接口
         const res = await fetch(`/start_cam?index=${selectedCam}`);
         const data = await res.json();
-        
+
         if (!data.success) {
           throw new Error(data.error || '启动摄像头失败');
         }
@@ -285,12 +317,12 @@
         camRunning = true;
         camImg.src = `/video_feed?t=${Date.now()}`; // 加时间戳避免缓存
         camImg.alt = `摄像头${selectedCam + 1}实时预览`;
-        
+
         // 更新按钮状态
         btnStart.disabled = true;
         btnStop.disabled = false;
         updateCamStatus(`已启动摄像头${selectedCam + 1}，正在实时检测`, 'success');
-        
+
         // 启动状态轮询
         pollCamStatus();
 
@@ -309,7 +341,7 @@
         // 调用后端停止接口
         const res = await fetch('/stop_cam');
         const data = await res.json();
-        
+
         if (data.success) {
           camRunning = false;
           // 清空预览
@@ -371,4 +403,5 @@
     listCams();
   </script>
 </body>
+
 </html>
