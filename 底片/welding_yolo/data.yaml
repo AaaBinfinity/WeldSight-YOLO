@@ -1,0 +1,9 @@
+path: dataset
+train: images/train
+val: images/val
+
+nc: 3
+names:
+  0: crack
+  1: pore
+  2: unfused
