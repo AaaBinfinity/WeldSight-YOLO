@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>数据管理 · WeldSight</title>
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2335d5df'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='17' font-weight='900' fill='%23042e33'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/workbench.css">
+  <link rel="stylesheet" href="/product.css">
+  <link rel="stylesheet" href="/data.css">
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="WeldSight 首页">
+        <span class="brand-mark">W</span>
+        <span class="brand-copy"><span class="brand-name">WeldSight</span><span
+            class="brand-subtitle">焊缝缺陷智能检测</span></span>
+      </a>
+      <div class="topbar-context"><span class="context-label">工业射线检测工作台</span><span class="service-state">检测服务在线</span>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <nav>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="/"><svg viewBox="0 0 24 24">
+                <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+              </svg><span>首页</span></a></li>
+          <li><a class="nav-link" href="/img.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <circle cx="8.5" cy="9" r="1.5" />
+                <path d="m4 17 5-5 4 4 3-3 5 5" />
+              </svg><span>图片检测</span></a></li>
+          <li><a class="nav-link" href="/batch.html"><svg viewBox="0 0 24 24">
+                <rect x="4" y="4" width="7" height="7" rx="1" />
+                <rect x="13" y="4" width="7" height="7" rx="1" />
+                <rect x="4" y="13" width="7" height="7" rx="1" />
+                <path d="M16.5 13v7M13 16.5h7" />
+              </svg><span>批量检测</span></a></li>
+          <li><a class="nav-link" href="/vid.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="m10 9 5 3-5 3zM7 4v16M17 4v16" />
+              </svg><span>视频检测</span></a></li>
+          <li><a class="nav-link" href="/cam.html"><svg viewBox="0 0 24 24">
+                <path d="M5 8h3l1.5-2h5L16 8h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z" />
+                <circle cx="12" cy="14" r="3.5" />
+              </svg><span>实时检测</span></a></li>
+          <li><a class="nav-link" href="/history.html"><svg viewBox="0 0 24 24">
+                <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+                <path d="M8 14h3M8 17h6" />
+              </svg><span>检测历史</span></a></li>
+          <li><a class="nav-link" href="/dashboard.html"><svg viewBox="0 0 24 24">
+                <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+              </svg><span>数据看板</span></a></li>
+          <li><a class="nav-link active" href="/data.html" aria-current="page"><svg viewBox="0 0 24 24">
+                <ellipse cx="12" cy="5" rx="7" ry="3" />
+                <path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
+              </svg><span>数据管理</span></a></li>
+          <li><a class="nav-link" href="/settings.html"><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.5 1A7 7 0 0 0 15 6L14.5 3h-5L9 6a7 7 0 0 0-1.4 1L5 6 3 9.5 5.1 11a7 7 0 0 0 0 2L3 14.5 5 18l2.6-1A7 7 0 0 0 9 18l.5 3h5l.5-3a7 7 0 0 0 1.4-1l2.6 1 2-3.5-2.1-1.5a7 7 0 0 0 .1-1z" />
+              </svg><span>系统设置</span></a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-foot">WELDSIGHT / DATA<br>MYSQL + LOCAL FILES</div>
+    </aside>
+
+    <main>
+      <div class="page-frame data-page">
+        <div class="page-head">
+          <div>
+            <h1>数据管理</h1>
+            <p class="page-description">统一管理 MySQL 检测记录、生成图片、AI 报告、反馈样本与导出归档。</p>
+          </div>
+          <div class="data-safe-note"><svg viewBox="0 0 24 24">
+              <path d="M12 3 5 6v5c0 4.7 2.9 8 7 10 4.1-2 7-5.3 7-10V6z" />
+              <path d="m9 12 2 2 4-5" />
+            </svg>仅显示连接状态，不展示凭据</div>
+        </div>
+
+        <section class="data-metrics" aria-label="数据概览">
+          <article class="panel data-metric">
+            <span class="data-metric-icon"><svg viewBox="0 0 24 24">
+                <path d="M4 18 9 12l4 3 7-9" />
+                <path d="M16 6h4v4" />
+              </svg></span>
+            <span class="data-metric-copy"><span class="data-metric-label">检测记录</span><strong class="data-metric-value"
+                id="metricRecords">—</strong><span class="data-metric-detail" id="metricRecordsDetail">正在读取 MySQL</span></span>
+          </article>
+          <article class="panel data-metric">
+            <span class="data-metric-icon"><svg viewBox="0 0 24 24">
+                <circle cx="9" cy="7" r="3" />
+                <path d="M3 21v-2a6 6 0 0 1 12 0v2M16 11l2 2 4-5" />
+              </svg></span>
+            <span class="data-metric-copy"><span class="data-metric-label">已人工复核</span><strong class="data-metric-value"
+                id="metricReviewed">—</strong><span class="data-metric-detail" id="metricReviewedDetail">复核完成率 —</span></span>
+          </article>
+          <article class="panel data-metric">
+            <span class="data-metric-icon"><svg viewBox="0 0 24 24">
+                <path d="M3 7h7l2 2h9v10H3z" />
+                <path d="M3 7V5h7l2 2" />
+              </svg></span>
+            <span class="data-metric-copy"><span class="data-metric-label">本地文件</span><strong class="data-metric-value"
+                id="metricFiles">—</strong><span class="data-metric-detail" id="metricFilesDetail">图片 / 批次 / 反馈</span></span>
+          </article>
+          <article class="panel data-metric">
+            <span class="data-metric-icon"><svg viewBox="0 0 24 24">
+                <ellipse cx="12" cy="5" rx="7" ry="3" />
+                <path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
+              </svg></span>
+            <span class="data-metric-copy"><span class="data-metric-label">存储占用</span><strong class="data-metric-value"
+                id="metricStorage">—</strong><span class="data-metric-detail">WeldSight 本地数据目录</span></span>
+          </article>
+        </section>
+
+        <section class="data-layout">
+          <article class="panel table-panel data-table-panel">
+            <div class="panel-heading">
+              <div class="data-panel-title">
+                <h2>检测数据</h2>
+                <span>当前页支持勾选、导出和精确删除</span>
+              </div>
+              <span class="panel-kicker" id="tableTotal">0 条记录</span>
+            </div>
+            <div class="data-toolbar-panel">
+              <div class="filter-group">
+                <input class="input search-input" id="searchInput" type="search" placeholder="搜索编号、文件名、项目或缺陷类别">
+                <select class="select" id="sourceFilter">
+                  <option value="">全部来源</option>
+                  <option value="image">图片检测</option>
+                  <option value="batch">批量检测</option>
+                  <option value="camera">实时检测</option>
+                </select>
+                <select class="select" id="aiFilter">
+                  <option value="">全部 AI 状态</option>
+                  <option value="completed">复核完成</option>
+                  <option value="queued">排队中</option>
+                  <option value="processing">复核中</option>
+                  <option value="failed">复核失败</option>
+                  <option value="not_configured">未配置</option>
+                  <option value="disabled">已关闭</option>
+                </select>
+              </div>
+              <div class="data-toolbar-actions">
+                <button class="button compact" id="refreshButton" type="button">刷新</button>
+                <button class="button compact" id="exportSelectedButton" type="button" disabled>导出所选</button>
+                <button class="button compact ghost-danger" id="deleteSelectedButton" type="button" disabled>删除所选</button>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th><input class="data-checkbox" id="selectPage" type="checkbox" aria-label="选择当前页"></th>
+                    <th>检测编号 / 文件名</th>
+                    <th>来源</th>
+                    <th>缺陷</th>
+                    <th>AI 状态</th>
+                    <th>人工复核</th>
+                    <th>检测时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="dataRows">
+                  <tr>
+                    <td class="table-empty" colspan="8">正在读取检测数据…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <div class="data-selection"><span>已选择 <strong id="selectedCount">0</strong> 项</span><span
+                  id="pageSummary">暂无记录</span></div>
+              <div class="data-pagination-actions">
+                <button class="icon-button" id="previousPage" type="button">上一页</button>
+                <button class="icon-button" id="nextPage" type="button">下一页</button>
+              </div>
+            </div>
+          </article>
+
+          <aside class="data-aside">
+            <article class="panel storage-card">
+              <div class="panel-heading">
+                <h2>存储状态</h2><span class="panel-kicker">RUNTIME</span>
+              </div>
+              <div class="storage-body">
+                <section class="storage-section">
+                  <h3>MySQL 连接</h3>
+                  <dl class="storage-list">
+                    <div class="storage-row"><dt>主机地址</dt><dd id="databaseHost">—</dd></div>
+                    <div class="storage-row"><dt>数据库</dt><dd id="databaseName">—</dd></div>
+                    <div class="storage-row"><dt>连接状态</dt><dd><span class="connection-state"
+                          id="databaseState">检查中</span></dd></div>
+                  </dl>
+                </section>
+                <section class="storage-section">
+                  <h3>文件目录统计</h3>
+                  <dl class="storage-list">
+                    <div class="storage-row"><dt>记录文件</dt><dd id="recordFiles">—</dd></div>
+                    <div class="storage-row"><dt>批次输入</dt><dd id="batchFiles">—</dd></div>
+                    <div class="storage-row"><dt>临时上传</dt><dd id="uploadFiles">—</dd></div>
+                    <div class="storage-row"><dt>反馈样本</dt><dd id="feedbackEntries">—</dd></div>
+                  </dl>
+                </section>
+                <section class="storage-section">
+                  <h3>本地存储构成</h3>
+                  <div class="storage-track"><div class="storage-fill" id="storageFill"></div></div>
+                  <div class="storage-caption"><span>记录文件占比</span><strong id="storageRatio">—</strong></div>
+                </section>
+              </div>
+            </article>
+
+            <article class="panel maintenance-card">
+              <div class="panel-heading">
+                <h2>归档与维护</h2>
+              </div>
+              <button class="maintenance-action" id="exportAllJson" type="button">
+                <span class="maintenance-icon"><svg viewBox="0 0 24 24">
+                    <path d="M6 3h8l4 4v14H6zM14 3v5h5" />
+                    <path d="M9 13h6M9 17h6" />
+                  </svg></span>
+                <span class="maintenance-copy"><strong>导出全部 JSON</strong><span>导出全部记录、报告与复核元数据</span></span>
+                <svg class="maintenance-arrow" viewBox="0 0 24 24">
+                  <path d="m9 5 7 7-7 7" />
+                </svg>
+              </button>
+              <button class="maintenance-action" id="exportAllZip" type="button">
+                <span class="maintenance-icon"><svg viewBox="0 0 24 24">
+                    <path d="M6 3h8l4 4v14H6zM14 3v5h5M12 10v7M9 14l3 3 3-3" />
+                  </svg></span>
+                <span class="maintenance-copy"><strong>下载完整 ZIP</strong><span>包含原图、检测图、报告元数据与反馈样本</span></span>
+                <svg class="maintenance-arrow" viewBox="0 0 24 24">
+                  <path d="m9 5 7 7-7 7" />
+                </svg>
+              </button>
+              <button class="maintenance-action" id="cleanupButton" type="button">
+                <span class="maintenance-icon"><svg viewBox="0 0 24 24">
+                    <path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14" />
+                    <path d="M10 11v6M14 11v6" />
+                  </svg></span>
+                <span class="maintenance-copy"><strong>清理孤立文件</strong><span>仅删除数据库中已不存在的记录和批次目录</span></span>
+                <svg class="maintenance-arrow" viewBox="0 0 24 24">
+                  <path d="m9 5 7 7-7 7" />
+                </svg>
+              </button>
+            </article>
+          </aside>
+
+          <article class="panel danger-zone">
+            <div class="danger-copy">
+              <h2>危险操作</h2>
+              <p>清空操作将删除所有检测记录、批次、生成图片和反馈样本，且不可恢复；系统设置、模型配置和 API Key 将保留。</p>
+            </div>
+            <button class="button danger" id="purgeButton" type="button">清空检测数据</button>
+          </article>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <nav class="mobile-nav" aria-label="移动端导航">
+    <a href="/"><svg viewBox="0 0 24 24">
+        <path d="m3 11 9-8 9 8v9H3z" />
+      </svg><span>首页</span></a>
+    <a href="/img.html"><svg viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="m4 17 5-5 4 4 3-3 5 5" />
+      </svg><span>图片</span></a>
+    <a href="/batch.html"><svg viewBox="0 0 24 24">
+        <rect x="4" y="4" width="7" height="7" />
+        <rect x="13" y="4" width="7" height="7" />
+        <path d="M8 14v6M5 17h6" />
+      </svg><span>批量</span></a>
+    <a href="/history.html"><svg viewBox="0 0 24 24">
+        <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+      </svg><span>历史</span></a>
+    <a href="/dashboard.html"><svg viewBox="0 0 24 24">
+        <path d="M4 19V9M10 19V5M16 19v-7" />
+      </svg><span>看板</span></a>
+    <a class="active" href="/data.html"><svg viewBox="0 0 24 24">
+        <ellipse cx="12" cy="5" rx="7" ry="3" />
+        <path d="M5 5v12c0 1.7 3.1 3 7 3s7-1.3 7-3V5" />
+      </svg><span>数据</span></a>
+  </nav>
+
+  <dialog class="data-dialog" id="deleteDialog">
+    <div class="dialog-head">
+      <div>
+        <h2>删除所选记录</h2>
+        <p>只会删除明确勾选的记录及其生成图片。</p>
+      </div>
+      <button class="dialog-close" data-close-dialog="deleteDialog" type="button" aria-label="关闭">×</button>
+    </div>
+    <div class="dialog-body">
+      <p>即将删除 <strong id="deleteDialogCount">0</strong> 条检测记录，关联的原图、检测图与批次引用会同步处理。</p>
+      <p class="dialog-warning">此操作不可撤销，建议先导出所选记录。</p>
+    </div>
+    <div class="dialog-actions">
+      <button class="button" data-close-dialog="deleteDialog" type="button">取消</button>
+      <button class="button danger" id="confirmDeleteButton" type="button">确认删除</button>
+    </div>
+  </dialog>
+
+  <dialog class="data-dialog" id="cleanupDialog">
+    <div class="dialog-head">
+      <div>
+        <h2>清理孤立文件</h2>
+        <p>核对 MySQL 记录与本地目录后执行。</p>
+      </div>
+      <button class="dialog-close" data-close-dialog="cleanupDialog" type="button" aria-label="关闭">×</button>
+    </div>
+    <div class="dialog-body">
+      <p>只删除数据库中已不存在的记录目录和批次目录。正在运行 AI 复核或批量任务时，系统会自动拒绝清理。</p>
+    </div>
+    <div class="dialog-actions">
+      <button class="button" data-close-dialog="cleanupDialog" type="button">取消</button>
+      <button class="button danger" id="confirmCleanupButton" type="button">开始核对并清理</button>
+    </div>
+  </dialog>
+
+  <dialog class="data-dialog" id="purgeDialog">
+    <div class="dialog-head">
+      <div>
+        <h2>清空全部检测数据</h2>
+        <p>系统设置、模型参数与 API Key 不受影响。</p>
+      </div>
+      <button class="dialog-close" data-close-dialog="purgeDialog" type="button" aria-label="关闭">×</button>
+    </div>
+    <div class="dialog-body">
+      <p>请输入“<strong>清空检测数据</strong>”确认。检测记录、批次、生成图片和人工反馈将被永久删除。</p>
+      <input class="input" id="purgeConfirmation" type="text" autocomplete="off" placeholder="输入：清空检测数据">
+      <p class="dialog-warning">该操作不可恢复。请确认已完成必要的数据归档。</p>
+    </div>
+    <div class="dialog-actions">
+      <button class="button" data-close-dialog="purgeDialog" type="button">取消</button>
+      <button class="button danger" id="confirmPurgeButton" type="button" disabled>永久清空</button>
+    </div>
+  </dialog>
+
+  <div class="data-toast" id="dataToast" role="status" aria-live="polite"></div>
+  <script src="/data.js"></script>
+</body>
+
+</html>

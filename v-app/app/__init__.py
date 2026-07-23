@@ -6,6 +6,7 @@ from flask import Flask
 from app.ai_reviewer import KimiVisionReviewer
 from app.camera_handler import init_camera_global_vars
 from app.config import Config
+from app.data_management import DataManagementService
 from app.inspection_service import InspectionService
 from app.inspection_store import InspectionStore
 from app.model_manager import load_yolo_model
@@ -42,7 +43,7 @@ def create_app(config_class=Config):
 
     app.model = load_yolo_model(app.config['MODEL_PATH'])
     app.inspection_store = InspectionStore(
-        app.config['DATABASE_PATH'],
+        app.config['DATABASE_CONFIG'],
         app.config['DATA_FOLDER'],
     )
     app.settings_defaults = {
@@ -91,6 +92,7 @@ def create_app(config_class=Config):
     )
     app.video_vars = init_video_global_vars()
     app.inspection_service = InspectionService(app, app.inspection_store)
+    app.data_management = DataManagementService(app, app.inspection_store)
 
     def record_camera_alert(
         original_jpeg,
@@ -129,10 +131,15 @@ def create_app(config_class=Config):
     app.register_blueprint(camera_bp)
     app.register_blueprint(inspection_bp)
 
+    database_config = app.config['DATABASE_CONFIG']
+    database_target = (
+        f"mysql://{database_config['host']}:{database_config['port']}/"
+        f"{database_config['database']}"
+    )
     app.logger.info(
         'WeldSight initialized: model=%s, kimi_review=%s, database=%s',
         'loaded' if app.model else 'unavailable',
         'ready' if app.ai_reviewer.available else 'not_configured',
-        app.config['DATABASE_PATH'],
+        database_target,
     )
     return app

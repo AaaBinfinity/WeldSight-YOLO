@@ -2,16 +2,29 @@
 
 from __future__ import annotations
 
+import io
+import re
+from datetime import datetime
 from pathlib import Path
 
 from flask import current_app, jsonify, request, send_file
 
+from app.annotation_renderer import render_annotated_image
+from app.defect_classes import (
+    DEFECT_CLASSES,
+    canonicalize_missed_defects,
+    normalize_detection_reviews,
+    validate_human_review_consistency,
+)
 from app.pdf_reports import build_batch_pdf, build_inspection_pdf
 from app.routes import inspection_bp
 
 
 ALLOWED_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp'}
 HUMAN_DECISIONS = {'confirmed', 'false_positive', 'missed_defect', 'mixed', 'accepted'}
+DATA_ID_PATTERN = re.compile(r'^[A-Za-z0-9_-]{1,32}$')
+ORPHAN_CONFIRMATION = 'CLEAN ORPHANS'
+PURGE_CONFIRMATION = 'CLEAR WELDSIGHT DATA'
 
 
 def _service():
@@ -20,6 +33,30 @@ def _service():
 
 def _store():
     return current_app.inspection_store
+
+
+def _data_manager():
+    return current_app.data_management
+
+
+def _validated_record_ids(values, maximum=2000):
+    if isinstance(values, (str, bytes)):
+        values = [values]
+    if not isinstance(values, (list, tuple, set)):
+        raise ValueError('检测记录编号列表格式错误。')
+    record_ids = []
+    for value in values or []:
+        for record_id in str(value).split(','):
+            record_id = record_id.strip()
+            if not record_id:
+                continue
+            if not DATA_ID_PATTERN.fullmatch(record_id):
+                raise ValueError('检测记录编号格式错误。')
+            if record_id not in record_ids:
+                record_ids.append(record_id)
+    if len(record_ids) > maximum:
+        raise ValueError(f'单次最多处理 {maximum} 条检测记录。')
+    return record_ids
 
 
 def _record_or_404(record_id):
@@ -37,6 +74,11 @@ def _public_settings():
         'model_loaded': bool(current_app.model),
         'model_path': Path(current_app.config['MODEL_PATH']).name,
     }
+
+
+@inspection_bp.route('/api/defect-classes', methods=['GET'])
+def list_defect_classes():
+    return jsonify({'items': list(DEFECT_CLASSES)})
 
 
 @inspection_bp.route('/api/inspections', methods=['POST'])
@@ -98,6 +140,16 @@ def _send_inspection_image(record_id, variant):
     record, error = _record_or_404(record_id)
     if error:
         return error
+    if variant == 'annotated':
+        image = render_annotated_image(
+            record.get('original_path'),
+            record.get('detections'),
+        )
+        if image is not None:
+            output = io.BytesIO()
+            image.save(output, format='JPEG', quality=92)
+            output.seek(0)
+            return send_file(output, mimetype='image/jpeg', conditional=False)
     path = Path(record[f'{variant}_path'])
     if not path.exists():
         return jsonify({'error': '图像文件不存在。'}), 404
@@ -144,6 +196,20 @@ def save_human_review(record_id):
     missed_defects = payload.get('missed_defects') or []
     if not isinstance(corrections, list) or not isinstance(missed_defects, list):
         return jsonify({'error': '复核修正数据格式错误。'}), 400
+    corrections, correction_error = normalize_detection_reviews(
+        record.get('detections'),
+        corrections,
+    )
+    if correction_error:
+        return jsonify({'error': correction_error}), 400
+    missed_defects = canonicalize_missed_defects(missed_defects)
+    review_error = validate_human_review_consistency(
+        decision,
+        corrections,
+        missed_defects,
+    )
+    if review_error:
+        return jsonify({'error': review_error}), 400
     reviewed = _store().save_human_review(
         record_id=record['id'],
         decision=decision,
@@ -251,6 +317,106 @@ def analytics_summary():
         _service().record_to_api(record) for record in recent
     ]
     return jsonify(analytics)
+
+
+@inspection_bp.route('/api/data/overview', methods=['GET'])
+def data_overview():
+    try:
+        return jsonify(_data_manager().overview())
+    except Exception as exc:
+        current_app.logger.exception('Data overview failed')
+        return jsonify({'error': f'读取数据概览失败：{exc}'}), 500
+
+
+@inspection_bp.route('/api/data/export.json', methods=['GET'])
+def export_data_json():
+    try:
+        record_ids = _validated_record_ids(
+            [
+                *request.args.getlist('id'),
+                request.args.get('ids', ''),
+            ]
+        )
+        output = _data_manager().build_json_export(record_ids or None)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    return send_file(
+        output,
+        mimetype='application/json',
+        as_attachment=True,
+        download_name=f'weldsight-data-{timestamp}.json',
+    )
+
+
+@inspection_bp.route('/api/data/export.zip', methods=['GET'])
+def export_data_zip():
+    try:
+        record_ids = _validated_record_ids(
+            [
+                *request.args.getlist('id'),
+                request.args.get('ids', ''),
+            ]
+        )
+        include_files = request.args.get(
+            'include_files',
+            '1',
+        ).strip().lower() not in {'0', 'false', 'no'}
+        output = _data_manager().build_zip_export(
+            record_ids or None,
+            include_files=include_files,
+        )
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    return send_file(
+        output,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=f'weldsight-archive-{timestamp}.zip',
+    )
+
+
+@inspection_bp.route('/api/data/records', methods=['DELETE'])
+def delete_data_records():
+    payload = request.get_json(silent=True) or {}
+    try:
+        record_ids = _validated_record_ids(
+            payload.get('ids') or [],
+            maximum=500,
+        )
+        if not record_ids:
+            raise ValueError('请选择要删除的检测记录。')
+        result = _data_manager().delete_records(record_ids)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    except RuntimeError as exc:
+        return jsonify({'error': str(exc)}), 409
+    return jsonify({'success': True, **result})
+
+
+@inspection_bp.route('/api/data/cleanup', methods=['POST'])
+def cleanup_orphan_data():
+    payload = request.get_json(silent=True) or {}
+    if payload.get('confirmation') != ORPHAN_CONFIRMATION:
+        return jsonify({'error': '孤立文件清理确认口令错误。'}), 400
+    try:
+        result = _data_manager().cleanup_orphans()
+    except RuntimeError as exc:
+        return jsonify({'error': str(exc)}), 409
+    return jsonify({'success': True, **result})
+
+
+@inspection_bp.route('/api/data/purge', methods=['POST'])
+def purge_detection_data():
+    payload = request.get_json(silent=True) or {}
+    if payload.get('confirmation') != PURGE_CONFIRMATION:
+        return jsonify({'error': '清空确认口令错误。'}), 400
+    try:
+        result = _data_manager().purge_detection_data()
+    except RuntimeError as exc:
+        return jsonify({'error': str(exc)}), 409
+    return jsonify({'success': True, **result})
 
 
 @inspection_bp.route('/api/alerts', methods=['GET'])

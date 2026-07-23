@@ -1,24 +1,80 @@
-"""SQLite persistence for inspections, batches, reviews, alerts, and settings."""
+"""MySQL persistence for inspections, batches, reviews, and settings."""
 
 from __future__ import annotations
 
 import json
-import sqlite3
+import re
 import threading
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from app.defect_classes import (
+    canonicalize_ai_review,
+    canonicalize_class_counts,
+    canonicalize_detections,
+    canonicalize_record,
+)
 
-class ClosingConnection(sqlite3.Connection):
-    """Commit or roll back and always release the Windows file handle."""
+try:
+    import pymysql
+    from pymysql.cursors import DictCursor
+except ImportError:
+    pymysql = None
+    DictCursor = None
+
+
+def _mysql_sql(sql):
+    sql = re.sub(r':([A-Za-z_][A-Za-z0-9_]*)', r'%(\1)s', sql)
+    return sql.replace('?', '%s')
+
+
+class MySQLConnection:
+    """Expose the connection API used by InspectionStore."""
+
+    def __init__(self, config):
+        if pymysql is None:
+            raise RuntimeError(
+                '缺少 PyMySQL 依赖，请先执行 uv sync 安装项目依赖。'
+            )
+        self.connection = pymysql.connect(
+            host=config['host'],
+            port=int(config['port']),
+            user=config['user'],
+            password=config['password'],
+            database=config['database'],
+            charset='utf8mb4',
+            connect_timeout=int(config.get('connect_timeout', 10)),
+            cursorclass=DictCursor,
+            autocommit=False,
+        )
+
+    def execute(self, sql, parameters=None):
+        cursor = self.connection.cursor()
+        cursor.execute(_mysql_sql(sql), parameters)
+        return cursor
+
+    def executescript(self, script):
+        cursor = self.connection.cursor()
+        for statement in script.split(';'):
+            statement = statement.strip()
+            if statement:
+                cursor.execute(statement)
+        return cursor
+
+    def __enter__(self):
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
-            return super().__exit__(exc_type, exc_value, traceback)
+            if exc_type is None:
+                self.connection.commit()
+            else:
+                self.connection.rollback()
         finally:
-            self.close()
+            self.connection.close()
+        return False
 
 
 def utc_now():
@@ -39,99 +95,88 @@ def _json_load(value, default):
 
 
 class InspectionStore:
-    """Small thread-safe repository using one SQLite connection per operation."""
+    """Small thread-safe repository using one database connection per operation."""
 
-    def __init__(self, database_path, data_folder):
-        self.database_path = Path(database_path)
+    def __init__(self, database, data_folder):
+        self.database_config = dict(database)
         self.data_folder = Path(data_folder)
-        self.database_path.parent.mkdir(parents=True, exist_ok=True)
         self.data_folder.mkdir(parents=True, exist_ok=True)
         self.feedback_path = self.data_folder / 'training_feedback.jsonl'
         self._feedback_lock = threading.Lock()
         self._initialize()
 
     def _connect(self):
-        connection = sqlite3.connect(
-            self.database_path,
-            timeout=30,
-            check_same_thread=False,
-            factory=ClosingConnection,
-        )
-        connection.row_factory = sqlite3.Row
-        connection.execute('PRAGMA foreign_keys = ON')
-        connection.execute('PRAGMA journal_mode = WAL')
-        return connection
+        return MySQLConnection(self.database_config)
 
     def _initialize(self):
         schema = """
         CREATE TABLE IF NOT EXISTS inspections (
-            id TEXT PRIMARY KEY,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            source_type TEXT NOT NULL,
-            source_name TEXT NOT NULL,
-            batch_id TEXT,
-            status TEXT NOT NULL,
-            ai_status TEXT NOT NULL,
-            model_name TEXT NOT NULL,
-            model_version TEXT NOT NULL,
-            confidence_threshold REAL NOT NULL,
-            original_path TEXT NOT NULL,
-            annotated_path TEXT NOT NULL,
-            image_width INTEGER NOT NULL,
-            image_height INTEGER NOT NULL,
-            detection_count INTEGER NOT NULL,
-            class_counts TEXT NOT NULL,
-            detections TEXT NOT NULL,
-            ai_review TEXT NOT NULL,
-            conclusion TEXT NOT NULL,
-            disclaimer TEXT NOT NULL,
-            project_name TEXT NOT NULL DEFAULT '',
-            reviewer TEXT NOT NULL DEFAULT '',
-            review_decision TEXT NOT NULL DEFAULT '',
-            review_notes TEXT NOT NULL DEFAULT '',
-            corrections TEXT NOT NULL DEFAULT '[]',
-            reviewed_at TEXT
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_inspections_created
-            ON inspections(created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_inspections_source
-            ON inspections(source_type, created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_inspections_status
-            ON inspections(status, ai_status);
-        CREATE INDEX IF NOT EXISTS idx_inspections_batch
-            ON inspections(batch_id);
+            id VARCHAR(32) PRIMARY KEY,
+            created_at VARCHAR(40) NOT NULL,
+            updated_at VARCHAR(40) NOT NULL,
+            source_type VARCHAR(32) NOT NULL,
+            source_name VARCHAR(255) NOT NULL,
+            batch_id VARCHAR(32) NULL,
+            status VARCHAR(32) NOT NULL,
+            ai_status VARCHAR(32) NOT NULL,
+            model_name VARCHAR(255) NOT NULL,
+            model_version VARCHAR(128) NOT NULL,
+            confidence_threshold DOUBLE NOT NULL,
+            original_path VARCHAR(1024) NOT NULL,
+            annotated_path VARCHAR(1024) NOT NULL,
+            image_width INT NOT NULL,
+            image_height INT NOT NULL,
+            detection_count INT NOT NULL,
+            class_counts LONGTEXT NOT NULL,
+            detections LONGTEXT NOT NULL,
+            ai_review LONGTEXT NOT NULL,
+            conclusion LONGTEXT NOT NULL,
+            disclaimer LONGTEXT NOT NULL,
+            project_name VARCHAR(255) NOT NULL DEFAULT '',
+            reviewer VARCHAR(128) NOT NULL DEFAULT '',
+            review_decision VARCHAR(32) NOT NULL DEFAULT '',
+            review_notes LONGTEXT NOT NULL,
+            corrections LONGTEXT NOT NULL,
+            reviewed_at VARCHAR(40) NULL,
+            KEY idx_inspections_created (created_at),
+            KEY idx_inspections_source (source_type, created_at),
+            KEY idx_inspections_status (status, ai_status),
+            KEY idx_inspections_batch (batch_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+          COLLATE=utf8mb4_unicode_ci;
 
         CREATE TABLE IF NOT EXISTS batches (
-            id TEXT PRIMARY KEY,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            name TEXT NOT NULL,
-            status TEXT NOT NULL,
-            total INTEGER NOT NULL,
-            processed INTEGER NOT NULL DEFAULT 0,
-            completed INTEGER NOT NULL DEFAULT 0,
-            failed INTEGER NOT NULL DEFAULT 0,
-            record_ids TEXT NOT NULL DEFAULT '[]',
-            error TEXT NOT NULL DEFAULT ''
-        );
+            id VARCHAR(32) PRIMARY KEY,
+            created_at VARCHAR(40) NOT NULL,
+            updated_at VARCHAR(40) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            status VARCHAR(32) NOT NULL,
+            total INT NOT NULL,
+            processed INT NOT NULL DEFAULT 0,
+            completed INT NOT NULL DEFAULT 0,
+            failed INT NOT NULL DEFAULT 0,
+            record_ids LONGTEXT NOT NULL,
+            error LONGTEXT NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+          COLLATE=utf8mb4_unicode_ci;
 
         CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-        );
+            `key` VARCHAR(128) PRIMARY KEY,
+            value LONGTEXT NOT NULL,
+            updated_at VARCHAR(40) NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+          COLLATE=utf8mb4_unicode_ci;
         """
         with self._connect() as connection:
             connection.executescript(schema)
 
     def create_inspection(self, record):
+        record = canonicalize_record(record)
         now = record.get('created_at') or utc_now()
         values = {
             'id': record.get('id') or uuid4().hex,
             'created_at': now,
-            'updated_at': now,
+            'updated_at': record.get('updated_at') or now,
             'source_type': record.get('source_type', 'image'),
             'source_name': record.get('source_name', 'unknown'),
             'batch_id': record.get('batch_id'),
@@ -152,6 +197,10 @@ class InspectionStore:
             'disclaimer': record.get('disclaimer', ''),
             'project_name': record.get('project_name', ''),
             'reviewer': record.get('reviewer', ''),
+            'review_decision': record.get('review_decision', ''),
+            'review_notes': record.get('review_notes', ''),
+            'corrections': _json_dump(record.get('corrections', [])),
+            'reviewed_at': record.get('reviewed_at'),
         }
         columns = ', '.join(values)
         placeholders = ', '.join(f':{key}' for key in values)
@@ -175,6 +224,12 @@ class InspectionStore:
         for key, value in changes.items():
             if key not in allowed:
                 continue
+            if key == 'class_counts':
+                value = canonicalize_class_counts(value)
+            elif key == 'detections':
+                value = canonicalize_detections(value)
+            elif key == 'ai_review':
+                value = canonicalize_ai_review(value)
             if key in json_fields:
                 value = _json_dump(value)
             values[key] = value
@@ -230,10 +285,15 @@ class InspectionStore:
         limit = max(1, min(int(limit), 200))
         offset = max(0, int(offset))
         with self._connect() as connection:
-            total = connection.execute(
-                f'SELECT COUNT(*) FROM inspections {where}',
+            total_row = connection.execute(
+                f'SELECT COUNT(*) AS total FROM inspections {where}',
                 values,
-            ).fetchone()[0]
+            ).fetchone()
+            total = (
+                total_row['total']
+                if isinstance(total_row, dict)
+                else total_row[0]
+            )
             rows = connection.execute(
                 f"""
                 SELECT * FROM inspections
@@ -298,8 +358,11 @@ class InspectionStore:
             connection.execute(
                 """
                 INSERT INTO batches
-                (id, created_at, updated_at, name, status, total)
-                VALUES (?, ?, ?, ?, 'queued', ?)
+                (
+                    id, created_at, updated_at, name, status, total,
+                    processed, completed, failed, record_ids, error
+                )
+                VALUES (?, ?, ?, ?, 'queued', ?, 0, 0, 0, '[]', '')
                 """,
                 (batch_id, now, now, name, int(total)),
             )
@@ -349,12 +412,171 @@ class InspectionStore:
             ).fetchall()
         return [self.get_batch(row['id']) for row in rows]
 
+    def data_overview(self):
+        """Return database-level counts without exposing connection credentials."""
+        with self._connect() as connection:
+            inspection_row = connection.execute(
+                """
+                SELECT
+                    COUNT(*) AS total_records,
+                    COALESCE(SUM(detection_count), 0) AS total_detections,
+                    COALESCE(SUM(
+                        CASE WHEN review_decision <> '' THEN 1 ELSE 0 END
+                    ), 0) AS reviewed_records,
+                    COALESCE(SUM(
+                        CASE WHEN ai_status = 'completed' THEN 1 ELSE 0 END
+                    ), 0) AS ai_completed,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN ai_status IN ('queued', 'processing')
+                            THEN 1 ELSE 0
+                        END
+                    ), 0) AS ai_pending,
+                    COALESCE(SUM(
+                        CASE WHEN ai_status = 'failed' THEN 1 ELSE 0 END
+                    ), 0) AS ai_failed,
+                    MAX(updated_at) AS last_updated
+                FROM inspections
+                """
+            ).fetchone()
+            batch_row = connection.execute(
+                'SELECT COUNT(*) AS total_batches FROM batches'
+            ).fetchone()
+            source_rows = connection.execute(
+                """
+                SELECT source_type, COUNT(*) AS count
+                FROM inspections
+                GROUP BY source_type
+                ORDER BY count DESC
+                """
+            ).fetchall()
+        overview = {
+            key: (
+                int(value)
+                if key not in {'last_updated'} and value is not None
+                else value
+            )
+            for key, value in dict(inspection_row).items()
+        }
+        overview['total_batches'] = int(batch_row['total_batches'])
+        overview['source_counts'] = {
+            row['source_type']: int(row['count'])
+            for row in source_rows
+        }
+        return overview
+
+    def list_record_ids(self):
+        with self._connect() as connection:
+            rows = connection.execute(
+                'SELECT id FROM inspections'
+            ).fetchall()
+        return {row['id'] for row in rows}
+
+    def list_batch_ids(self):
+        with self._connect() as connection:
+            rows = connection.execute('SELECT id FROM batches').fetchall()
+        return {row['id'] for row in rows}
+
+    def export_inspections(self, record_ids=None):
+        record_ids = list(dict.fromkeys(record_ids or []))
+        with self._connect() as connection:
+            if record_ids:
+                placeholders = ', '.join('?' for _ in record_ids)
+                rows = connection.execute(
+                    f"""
+                    SELECT * FROM inspections
+                    WHERE id IN ({placeholders})
+                    ORDER BY created_at DESC
+                    """,
+                    record_ids,
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    """
+                    SELECT * FROM inspections
+                    ORDER BY created_at DESC
+                    """
+                ).fetchall()
+        return [self._inspection_dict(row) for row in rows]
+
+    def delete_inspections(self, record_ids):
+        """Delete exact records and remove their IDs from batch metadata."""
+        record_ids = list(dict.fromkeys(
+            str(record_id).strip()
+            for record_id in (record_ids or [])
+            if str(record_id).strip()
+        ))
+        if not record_ids:
+            return []
+        placeholders = ', '.join('?' for _ in record_ids)
+        with self._connect() as connection:
+            rows = connection.execute(
+                f'SELECT * FROM inspections WHERE id IN ({placeholders})',
+                record_ids,
+            ).fetchall()
+            found_ids = {row['id'] for row in rows}
+            if not found_ids:
+                return []
+            found_placeholders = ', '.join('?' for _ in found_ids)
+            connection.execute(
+                f'DELETE FROM inspections WHERE id IN ({found_placeholders})',
+                list(found_ids),
+            )
+            batches = connection.execute(
+                'SELECT id, record_ids FROM batches'
+            ).fetchall()
+            for batch in batches:
+                current_ids = _json_load(batch['record_ids'], [])
+                remaining_ids = [
+                    record_id
+                    for record_id in current_ids
+                    if record_id not in found_ids
+                ]
+                if remaining_ids != current_ids:
+                    connection.execute(
+                        """
+                        UPDATE batches
+                        SET record_ids = ?, updated_at = ?
+                        WHERE id = ?
+                        """,
+                        (
+                            _json_dump(remaining_ids),
+                            utc_now(),
+                            batch['id'],
+                        ),
+                    )
+        return [self._inspection_dict(row) for row in rows]
+
+    def purge_detection_data(self):
+        """Delete inspections and batches while intentionally preserving settings."""
+        with self._connect() as connection:
+            inspection_rows = connection.execute(
+                'SELECT * FROM inspections'
+            ).fetchall()
+            batch_rows = connection.execute(
+                'SELECT id FROM batches'
+            ).fetchall()
+            connection.execute('DELETE FROM inspections')
+            connection.execute('DELETE FROM batches')
+        return {
+            'inspections': [
+                self._inspection_dict(row)
+                for row in inspection_rows
+            ],
+            'batch_ids': [row['id'] for row in batch_rows],
+        }
+
     def get_settings(self, defaults=None):
         result = dict(defaults or {})
         with self._connect() as connection:
-            rows = connection.execute('SELECT key, value FROM settings').fetchall()
+            rows = connection.execute(
+                'SELECT `key` AS setting_key, value FROM settings'
+            ).fetchall()
         for row in rows:
-            result[row['key']] = _json_load(row['value'], row['value'])
+            result[row['setting_key']] = _json_load(
+                row['value'],
+                row['value'],
+            )
         return result
 
     def update_settings(self, settings):
@@ -363,11 +585,11 @@ class InspectionStore:
             for key, value in settings.items():
                 connection.execute(
                     """
-                    INSERT INTO settings (key, value, updated_at)
+                    INSERT INTO settings (`key`, value, updated_at)
                     VALUES (?, ?, ?)
-                    ON CONFLICT(key) DO UPDATE SET
-                        value = excluded.value,
-                        updated_at = excluded.updated_at
+                    ON DUPLICATE KEY UPDATE
+                        value = VALUES(value),
+                        updated_at = VALUES(updated_at)
                     """,
                     (key, _json_dump(value), now),
                 )
@@ -401,7 +623,9 @@ class InspectionStore:
             daily[created_day]['defects'] += count
             if count:
                 defect_records += 1
-            class_counts.update(_json_load(row['class_counts'], {}))
+            class_counts.update(canonicalize_class_counts(
+                _json_load(row['class_counts'], {})
+            ))
             source_counts[row['source_type']] += 1
             review_counts[row['review_decision'] or 'pending'] += 1
             for detection in _json_load(row['detections'], []):
@@ -448,4 +672,4 @@ class InspectionStore:
         item['detections'] = _json_load(item['detections'], [])
         item['ai_review'] = _json_load(item['ai_review'], {})
         item['corrections'] = _json_load(item['corrections'], [])
-        return item
+        return canonicalize_record(item)

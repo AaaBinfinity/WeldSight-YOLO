@@ -13,6 +13,12 @@ from openai import (
     RateLimitError,
 )
 
+from app.defect_classes import (
+    DEFECT_CLASSES,
+    canonicalize_ai_review,
+    canonicalize_detections,
+)
+
 
 SYSTEM_PROMPT = """你是工业射线检测辅助复核模型。
 你需要结合两张图片进行谨慎复核：第一张是原始焊缝射线底片，第二张是 YOLO 标注结果。
@@ -34,6 +40,7 @@ def _data_url(jpeg_bytes):
 
 
 def _summary(detections):
+    detections = canonicalize_detections(detections)
     counts = Counter(item['class_name'] for item in detections)
     return {
         'total': len(detections),
@@ -105,7 +112,11 @@ class KimiVisionReviewer:
                 'message': '未配置 MOONSHOT_API_KEY，已跳过 Kimi 视觉复核。',
             }
 
-        prompt = f"""YOLO 候选结果如下：
+        class_legend = '；'.join(item['label'] for item in DEFECT_CLASSES)
+        prompt = f"""缺陷类别必须使用以下完整编号名称，不得缩写或改写：
+{class_legend}
+
+YOLO 候选结果如下：
 {json.dumps(_summary(detections), ensure_ascii=False)}
 
 请按以下字段输出 JSON：
@@ -145,7 +156,7 @@ class KimiVisionReviewer:
                 parsed = json.loads(content)
                 parsed['status'] = 'completed'
                 parsed['model'] = model
-                return parsed
+                return canonicalize_ai_review(parsed)
             except TRANSIENT_ERRORS as exc:
                 last_error = exc
 

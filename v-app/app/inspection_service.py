@@ -12,6 +12,11 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from app.defect_classes import (
+    canonicalize_ai_review,
+    canonicalize_detections,
+    canonicalize_record,
+)
 from app.inference import run_detections
 from app.inspection_store import utc_now
 from app.reporting import build_detection_report
@@ -98,6 +103,7 @@ class InspectionService:
         reviewer='',
         queue_ai=True,
     ):
+        detections = canonicalize_detections(detections)
         record_id = uuid4().hex
         record_dir = self.record_folder / record_id
         record_dir.mkdir(parents=True, exist_ok=True)
@@ -220,6 +226,7 @@ class InspectionService:
                 Path(record['annotated_path']).read_bytes(),
                 record['detections'],
             )
+            review = canonicalize_ai_review(review)
             report = build_detection_report(
                 record['detections'],
                 review,
@@ -351,6 +358,7 @@ class InspectionService:
     def record_to_api(self, record):
         if not record:
             return None
+        record = canonicalize_record(record)
         report = {
             'report_id': record['id'],
             'generated_at': record['created_at'],

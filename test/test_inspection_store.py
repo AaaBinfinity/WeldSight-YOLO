@@ -1,12 +1,23 @@
 import json
 import importlib.util
+import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import ModuleType
+from uuid import uuid4
+
+from dotenv import load_dotenv
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 APP_ROOT = PROJECT_ROOT / 'v-app'
+load_dotenv(PROJECT_ROOT / '.env')
+sys.path.insert(0, str(APP_ROOT))
+APP_PACKAGE = ModuleType('app')
+APP_PACKAGE.__path__ = [str(APP_ROOT / 'app')]
+sys.modules.setdefault('app', APP_PACKAGE)
 STORE_PATH = APP_ROOT / 'app' / 'inspection_store.py'
 STORE_SPEC = importlib.util.spec_from_file_location(
     'weldsight_inspection_store',
@@ -15,25 +26,57 @@ STORE_SPEC = importlib.util.spec_from_file_location(
 STORE_MODULE = importlib.util.module_from_spec(STORE_SPEC)
 STORE_SPEC.loader.exec_module(STORE_MODULE)
 InspectionStore = STORE_MODULE.InspectionStore
+MYSQL_CONFIG = {
+    'host': os.environ.get('MYSQL_HOST', 'localhost'),
+    'port': int(os.environ.get('MYSQL_PORT', '3306')),
+    'user': os.environ.get('MYSQL_USER', 'root'),
+    'password': os.environ.get('MYSQL_PASSWORD', ''),
+    'database': os.environ.get('MYSQL_DATABASE', 'WeldSight'),
+    'connect_timeout': int(os.environ.get('MYSQL_CONNECT_TIMEOUT', '10')),
+}
 
 
 class InspectionStoreTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         root = Path(self.temporary.name)
-        self.store = InspectionStore(root / 'weldsight.db', root / 'data')
+        self.store = InspectionStore(MYSQL_CONFIG, root / 'data')
+        self.test_prefix = f'test-{uuid4().hex}'
+        self.record_ids = []
+        self.batch_ids = []
+        self.setting_keys = []
+        self.analytics_before = self.store.analytics(30)
         self.original = root / 'original.jpg'
         self.annotated = root / 'annotated.jpg'
         self.original.write_bytes(b'original')
         self.annotated.write_bytes(b'annotated')
 
     def tearDown(self):
-        self.temporary.cleanup()
+        try:
+            with self.store._connect() as connection:
+                for record_id in self.record_ids:
+                    connection.execute(
+                        'DELETE FROM inspections WHERE id = ?',
+                        (record_id,),
+                    )
+                for batch_id in self.batch_ids:
+                    connection.execute(
+                        'DELETE FROM batches WHERE id = ?',
+                        (batch_id,),
+                    )
+                for key in self.setting_keys:
+                    connection.execute(
+                        'DELETE FROM settings WHERE `key` = ?',
+                        (key,),
+                    )
+        finally:
+            self.temporary.cleanup()
 
     def create_record(self, **overrides):
         payload = {
+            'id': uuid4().hex,
             'source_type': 'image',
-            'source_name': 'sample.jpg',
+            'source_name': f'{self.test_prefix}-sample.jpg',
             'status': 'completed',
             'ai_status': 'completed',
             'model_name': 'best.pt',
@@ -57,11 +100,13 @@ class InspectionStoreTests(unittest.TestCase):
             'reviewer': '',
         }
         payload.update(overrides)
-        return self.store.create_inspection(payload)
+        record = self.store.create_inspection(payload)
+        self.record_ids.append(record['id'])
+        return record
 
     def test_record_search_review_and_training_feedback(self):
         record = self.create_record()
-        result = self.store.list_inspections(query='裂纹')
+        result = self.store.list_inspections(query=self.test_prefix)
         self.assertEqual(result['total'], 1)
         self.assertEqual(result['items'][0]['id'], record['id'])
 
@@ -98,6 +143,7 @@ class InspectionStoreTests(unittest.TestCase):
             detections=[],
         )
         batch = self.store.create_batch('夜班抽检', 2)
+        self.batch_ids.append(batch['id'])
         updated = self.store.update_batch(
             batch['id'],
             status='processing',
@@ -106,20 +152,37 @@ class InspectionStoreTests(unittest.TestCase):
         )
         self.assertEqual(updated['progress'], 50.0)
 
+        conf_key = f'{self.test_prefix}-conf-thresh'
+        kimi_key = f'{self.test_prefix}-kimi-enabled'
+        self.setting_keys.extend([conf_key, kimi_key])
         self.store.update_settings({
-            'conf_thresh': 0.42,
-            'kimi_review_enabled': False,
+            conf_key: 0.42,
+            kimi_key: False,
         })
-        settings = self.store.get_settings({'conf_thresh': 0.25})
-        self.assertEqual(settings['conf_thresh'], 0.42)
-        self.assertFalse(settings['kimi_review_enabled'])
+        settings = self.store.get_settings({conf_key: 0.25})
+        self.assertEqual(settings[conf_key], 0.42)
+        self.assertFalse(settings[kimi_key])
 
         analytics = self.store.analytics(30)
-        self.assertEqual(analytics['total_inspections'], 2)
-        self.assertEqual(analytics['defect_records'], 1)
         self.assertEqual(
-            analytics['class_distribution'],
-            [{'name': '裂纹', 'value': 1}],
+            analytics['total_inspections'],
+            self.analytics_before['total_inspections'] + 2,
+        )
+        self.assertEqual(
+            analytics['defect_records'],
+            self.analytics_before['defect_records'] + 1,
+        )
+        before_classes = {
+            item['name']: item['value']
+            for item in self.analytics_before['class_distribution']
+        }
+        after_classes = {
+            item['name']: item['value']
+            for item in analytics['class_distribution']
+        }
+        self.assertEqual(
+            after_classes.get('03-裂纹', 0),
+            before_classes.get('03-裂纹', 0) + 1,
         )
 
 

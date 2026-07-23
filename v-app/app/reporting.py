@@ -4,6 +4,11 @@ from collections import Counter
 from datetime import datetime, timezone
 from uuid import uuid4
 
+from app.defect_classes import (
+    canonicalize_ai_review,
+    canonicalize_detections,
+)
+
 
 def build_detection_report(
     detections,
@@ -11,6 +16,8 @@ def build_detection_report(
     report_id=None,
     generated_at=None,
 ):
+    detections = canonicalize_detections(detections)
+    ai_review = canonicalize_ai_review(ai_review)
     counts = Counter(item['class_name'] for item in detections)
     ai_status = ai_review.get('status')
     if ai_status == 'completed':

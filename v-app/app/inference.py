@@ -1,5 +1,7 @@
 """Shared helpers for running YOLO inference on OpenCV frames."""
 
+from app.defect_classes import defect_label
+
 
 def run_detections(model, frame, conf_thresh, image_size=640):
     """Return the annotated frame and serializable YOLO detection details."""
@@ -12,6 +14,11 @@ def run_detections(model, frame, conf_thresh, image_size=640):
         return frame, []
 
     names = getattr(result, 'names', {}) or {}
+    canonical_names = {
+        class_id: defect_label(class_id, name)
+        for class_id, name in names.items()
+    }
+    result.names = canonical_names
     detections = []
     boxes = getattr(result, 'boxes', None)
     if boxes is not None:
@@ -21,7 +28,10 @@ def run_detections(model, frame, conf_thresh, image_size=640):
             coordinates = [round(float(value), 2) for value in box.xyxy[0].tolist()]
             detections.append({
                 'class_id': class_id,
-                'class_name': str(names.get(class_id, class_id)),
+                'class_name': canonical_names.get(
+                    class_id,
+                    defect_label(class_id, names.get(class_id)),
+                ),
                 'confidence': round(confidence, 4),
                 'box_xyxy': coordinates,
             })
