@@ -1,223 +1,1024 @@
 <!doctype html>
-<html>
-
+<html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <title>图片检测</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>图片检测与 AI 复核 · WeldSight</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230c121a'/%3E%3Cpath d='m7 12 18-4M7 20l18 4' stroke='%2349d7ff' stroke-width='2.5'/%3E%3C/svg%3E">
   <style>
-    /* 基础样式重置 */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    :root {
+      --ink: #14202b;
+      --muted: #667481;
+      --subtle: #8d99a4;
+      --line: #dce3e8;
+      --line-strong: #c8d2da;
+      --page: #edf1f4;
+      --surface: #ffffff;
+      --surface-soft: #f6f8fa;
+      --graphite: #0d151d;
+      --graphite-2: #151f29;
+      --cyan: #00a9b9;
+      --cyan-strong: #008b99;
+      --cyan-soft: #e4f7f8;
+      --green: #16825d;
+      --green-soft: #e6f5ef;
+      --amber: #b66a12;
+      --amber-soft: #fff4de;
+      --red: #c13f49;
+      --red-soft: #fdecee;
+      --shadow: 0 18px 45px rgba(14, 30, 43, .08);
+      --radius: 12px;
+      --font: Inter, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
     }
 
-    /* 页面布局 */
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--page); }
     body {
       min-height: 100vh;
-      background: #f0f2f5;
-      padding: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-      color: #333;
+      margin: 0;
+      color: var(--ink);
+      background: var(--page);
+      font-family: var(--font);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    svg { display: block; }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template: 64px minmax(0, 1fr) / 216px minmax(0, 1fr);
     }
 
-    /* 标题样式 */
-    h2 {
-      color: #2c3e50;
-      font-size: 1.8rem;
-      margin: 1.5rem 0 2rem;
-      padding-bottom: 0.8rem;
-      position: relative;
-      display: inline-block;
-    }
-
-    h2::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      height: 3px;
-      background: #3498db;
-      border-radius: 2px;
-    }
-
-    /* 上传区域样式 */
-    .upload-container {
-      background: white;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      margin-bottom: 2rem;
-    }
-
-    /* 文件选择框样式 */
-    #imgfile {
-      display: none;
-    }
-
-    .file-label {
-      display: inline-block;
-      padding: 0.8rem 1.5rem;
-      border: 2px dashed #bdc3c7;
-      border-radius: 6px;
-      background: white;
-      color: #555;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-right: 1rem;
-    }
-
-    .file-label:hover {
-      border-color: #3498db;
-      color: #3498db;
-    }
-
-    /* 按钮样式 */
-    #btnImg {
-      padding: 0.8rem 1.8rem;
-      background: #3498db;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    #btnImg:hover {
-      background: #2980b9;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-    }
-
-    #btnImg:active {
-      transform: translateY(0);
-    }
-
-    /* 图片显示区域 */
-    .result-container {
-      background: white;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      margin-bottom: 2rem;
-      min-height: 200px;
+    .topbar {
+      grid-column: 1 / -1;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 28px;
+      padding: 0 24px;
+      color: #f4f8fa;
+      background: var(--graphite);
+      border-bottom: 1px solid #26323d;
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
-
-    #imgRes {
-      max-width: 100%;
-      max-height: 600px;
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-    }
-
-    #imgRes:hover {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    }
-
-    /* 返回链接样式 */
-    .back-link {
-      display: inline-block;
-      margin-top: 1rem;
-      color: #3498db;
+    .brand {
+      min-width: 192px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: inherit;
       text-decoration: none;
-      font-weight: 500;
-      transition: all 0.2s ease;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      color: #042e33;
+      background: #35d5df;
+      border-radius: 9px;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: -.8px;
+    }
+    .brand-copy { display: grid; gap: 1px; }
+    .brand-copy strong { font-size: 16px; letter-spacing: .1px; }
+    .brand-copy span { color: #8fa2b2; font-size: 10px; letter-spacing: .35px; }
+    .topbar-context {
+      flex: 1;
+      color: #a9b8c4;
+      font-size: 12px;
+    }
+    .service-state {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #bdc9d2;
+      font-size: 12px;
+    }
+    .service-state::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #42d39a;
+      box-shadow: 0 0 0 4px rgba(66, 211, 154, .12);
     }
 
-    .back-link:hover {
-      color: #2980b9;
-      text-decoration: underline;
+    .sidebar {
+      grid-row: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22px 14px 18px;
+      background: #111b24;
+      border-right: 1px solid #26323d;
+    }
+    .nav-list { display: grid; gap: 6px; }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 44px;
+      padding: 0 13px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: #91a2b0;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 650;
+      transition: color .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .nav-link svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .nav-link:hover { color: #e5edf2; background: #182630; }
+    .nav-link.active {
+      color: #62e1e7;
+      background: #142b32;
+      border-color: #244850;
+    }
+    .sidebar-note {
+      margin: 0 8px;
+      padding-top: 14px;
+      color: #667a8b;
+      border-top: 1px solid #26323d;
+      font-size: 10px;
+      line-height: 1.6;
     }
 
-    /* 响应式设计 */
-    @media (max-width: 768px) {
-      body {
-        padding: 1rem;
-      }
+    main {
+      grid-column: 2;
+      grid-row: 2;
+      min-width: 0;
+      padding: 28px clamp(22px, 3vw, 44px) 44px;
+    }
+    .page-frame { width: min(1480px, 100%); margin: 0 auto; }
+    .page-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+    .page-head h1 {
+      margin: 0;
+      font-size: clamp(26px, 2.6vw, 36px);
+      line-height: 1.18;
+      letter-spacing: -.8px;
+    }
+    .page-head p {
+      max-width: 680px;
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .page-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--subtle);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .page-step strong { color: var(--cyan-strong); font-size: 12px; }
 
-      .upload-container,
-      .result-container {
-        padding: 1.5rem;
-      }
+    .upload-strip {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) auto;
+      align-items: stretch;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .drop-zone {
+      min-width: 0;
+      min-height: 88px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px dashed #afbdc7;
+      border-radius: var(--radius);
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(14, 30, 43, .04);
+      transition: border-color .18s ease, background .18s ease, transform .18s ease;
+    }
+    .drop-zone:hover, .drop-zone.dragging {
+      border-color: var(--cyan);
+      background: #f7fdfd;
+      transform: translateY(-1px);
+    }
+    .drop-icon {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      color: var(--cyan-strong);
+      background: var(--cyan-soft);
+      border-radius: 10px;
+    }
+    .drop-icon svg {
+      width: 23px;
+      height: 23px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .drop-copy { min-width: 0; display: grid; gap: 4px; }
+    .drop-copy strong { font-size: 15px; }
+    .drop-copy span {
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
-      .file-label,
-      #btnImg {
-        display: block;
-        width: 100%;
-        margin: 0 0 1rem 0;
-        text-align: center;
-      }
+    .upload-actions {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .button {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 0 18px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .button svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .button:hover:not(:disabled) { transform: translateY(-1px); }
+    .button-primary { min-width: 176px; color: #fff; background: var(--cyan-strong); }
+    .button-primary:hover:not(:disabled) { background: #007c88; }
+    .button-secondary { color: #344552; background: var(--surface); border-color: var(--line-strong); }
+    .button-secondary:hover:not(:disabled) { border-color: #93a4b0; background: var(--surface-soft); }
+    .button:disabled { opacity: .42; cursor: not-allowed; }
 
-      h2 {
-        font-size: 1.5rem;
+    .status-rail {
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 0 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #9aa7b1;
+    }
+    .status-rail[data-state="working"] .status-dot {
+      background: var(--cyan);
+      animation: pulse 1s ease-in-out infinite;
+    }
+    .status-rail[data-state="success"] .status-dot { background: var(--green); }
+    .status-rail[data-state="error"] { color: var(--red); }
+    .status-rail[data-state="error"] .status-dot { background: var(--red); }
+    .status-progress {
+      width: 100px;
+      height: 3px;
+      overflow: hidden;
+      display: none;
+      background: #d5dde2;
+      border-radius: 99px;
+    }
+    .status-rail[data-state="working"] .status-progress { display: block; }
+    .status-progress::after {
+      content: "";
+      display: block;
+      width: 42%;
+      height: 100%;
+      background: var(--cyan);
+      animation: scan 1.2s ease-in-out infinite;
+    }
+
+    .workspace {
+      min-height: 600px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.52fr) minmax(340px, .72fr);
+      gap: 16px;
+    }
+    .canvas-panel, .report-panel {
+      min-width: 0;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .panel-head {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .panel-title h2 { margin: 0; font-size: 15px; letter-spacing: -.1px; }
+    .panel-title span { color: var(--subtle); font-size: 11px; }
+
+    .view-tabs {
+      display: flex;
+      align-items: center;
+      padding: 3px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .view-tab {
+      min-height: 28px;
+      padding: 0 11px;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .view-tab.active { color: var(--ink); background: #fff; box-shadow: 0 1px 4px rgba(14, 30, 43, .1); }
+    .view-tab:disabled { opacity: .4; cursor: not-allowed; }
+
+    .image-stage {
+      height: 500px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      color: #aab7c2;
+      background-color: #0b1117;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    .image-stage::before, .image-stage::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-color: #38505f;
+      pointer-events: none;
+    }
+    .image-stage::before { top: 16px; left: 16px; border-top: 1px solid; border-left: 1px solid; }
+    .image-stage::after { right: 16px; bottom: 16px; border-right: 1px solid; border-bottom: 1px solid; }
+    .result-image {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .image-stage.has-image .result-image { display: block; }
+    .empty-canvas {
+      max-width: 330px;
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    .image-stage.has-image .empty-canvas { display: none; }
+    .empty-canvas svg {
+      width: 38px;
+      height: 38px;
+      fill: none;
+      stroke: #526878;
+      stroke-width: 1.4;
+    }
+    .empty-canvas strong { color: #d6dee4; font-size: 14px; }
+    .empty-canvas span { color: #708392; font-size: 11px; line-height: 1.65; }
+    .stage-working {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      color: #fff;
+      background: rgba(7, 13, 18, .78);
+      backdrop-filter: blur(3px);
+      z-index: 4;
+    }
+    .stage-working.visible { display: grid; }
+    .working-copy { display: grid; justify-items: center; gap: 13px; }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 2px solid rgba(255,255,255,.18);
+      border-top-color: #4fdae2;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    .working-copy strong { font-size: 13px; }
+    .working-copy span { color: #94a6b4; font-size: 11px; }
+
+    .canvas-foot {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 18px;
+      color: var(--muted);
+      background: #fbfcfd;
+      border-top: 1px solid var(--line);
+      font-size: 11px;
+    }
+    .file-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .model-meta { flex: 0 0 auto; color: var(--subtle); font-variant-numeric: tabular-nums; }
+
+    .report-panel { display: flex; flex-direction: column; }
+    .report-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .report-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #a4afb8; }
+    .report-status.completed { color: var(--green); }
+    .report-status.completed::before { background: var(--green); }
+    .report-status.failed { color: var(--red); }
+    .report-status.failed::before { background: var(--red); }
+    .report-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 0 18px 20px;
+      scrollbar-width: thin;
+      scrollbar-color: #c5d0d7 transparent;
+    }
+    .report-empty {
+      min-height: 450px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+    }
+    .report-empty-inner { max-width: 250px; display: grid; justify-items: center; gap: 12px; }
+    .report-empty svg { width: 34px; height: 34px; fill: none; stroke: #9daab4; stroke-width: 1.5; }
+    .report-empty strong { color: #52616d; font-size: 13px; }
+    .report-empty span { font-size: 11px; line-height: 1.65; }
+    .report-content { display: none; }
+    .report-panel.ready .report-empty { display: none; }
+    .report-panel.ready .report-content { display: block; }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--line);
+    }
+    .summary-cell { padding: 18px 2px 16px; }
+    .summary-cell + .summary-cell { padding-left: 18px; border-left: 1px solid var(--line); }
+    .summary-cell span { display: block; color: var(--muted); font-size: 10px; }
+    .summary-cell strong { display: block; margin-top: 5px; font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .summary-cell strong.small { color: var(--green); font-size: 15px; line-height: 1.4; }
+
+    .report-section { padding: 18px 0; border-bottom: 1px solid var(--line); }
+    .report-section:last-child { border-bottom: 0; }
+    .section-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .45px;
+      text-transform: uppercase;
+    }
+    .risk {
+      padding: 3px 7px;
+      color: var(--amber);
+      background: var(--amber-soft);
+      border-radius: 5px;
+      font-size: 10px;
+      letter-spacing: 0;
+    }
+    .risk.low { color: var(--green); background: var(--green-soft); }
+    .risk.high { color: var(--red); background: var(--red-soft); }
+    .conclusion {
+      margin: 0;
+      color: #263743;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.75;
+    }
+    .class-list, .finding-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .class-row, .finding-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 0;
+      color: #354754;
+      border-bottom: 1px solid #edf1f3;
+      font-size: 12px;
+    }
+    .class-row:last-child, .finding-row:last-child { border-bottom: 0; }
+    .class-row b {
+      min-width: 28px;
+      color: var(--cyan-strong);
+      font-size: 13px;
+      text-align: right;
+    }
+    .finding-row { display: grid; justify-content: stretch; gap: 3px; }
+    .finding-row strong { font-size: 12px; }
+    .finding-row span { color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .empty-line { color: var(--subtle); font-size: 11px; }
+    .disclaimer {
+      margin: 0;
+      padding: 11px 12px;
+      color: #765315;
+      background: var(--amber-soft);
+      border: 1px solid #f1dcae;
+      border-radius: 8px;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+    details { margin-top: 12px; }
+    summary { color: var(--muted); font-size: 11px; cursor: pointer; }
+    pre {
+      margin: 10px 0 0;
+      padding: 12px;
+      overflow: auto;
+      color: #50616e;
+      background: var(--surface-soft);
+      border-radius: 8px;
+      font: 10px/1.6 Consolas, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .mobile-nav { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 5px rgba(0, 169, 185, .15); } }
+    @keyframes scan { from { transform: translateX(-100%); } to { transform: translateX(240%); } }
+
+    @media (max-width: 1120px) {
+      .app-shell { grid-template-columns: 76px minmax(0, 1fr); }
+      .brand { min-width: 52px; }
+      .brand-copy, .topbar-context, .nav-link span, .sidebar-note { display: none; }
+      .nav-link { justify-content: center; padding: 0; }
+      .workspace { grid-template-columns: minmax(0, 1.35fr) minmax(320px, .8fr); }
+    }
+    @media (max-width: 860px) {
+      .workspace { grid-template-columns: 1fr; }
+      .report-panel { min-height: 520px; }
+      .image-stage { height: min(58vw, 470px); min-height: 340px; }
+      .upload-strip { grid-template-columns: 1fr; }
+      .upload-actions { justify-content: flex-end; }
+    }
+    @media (max-width: 640px) {
+      body { padding-bottom: 64px; }
+      .app-shell { display: block; }
+      .topbar { height: 60px; padding: 0 16px; }
+      .brand-copy { display: grid; }
+      .topbar-context, .service-state { display: none; }
+      .sidebar { display: none; }
+      main { padding: 22px 14px 28px; }
+      .page-head { align-items: flex-start; margin-bottom: 18px; }
+      .page-head h1 { font-size: 25px; }
+      .page-head p { font-size: 12px; }
+      .page-step { display: none; }
+      .drop-zone { min-height: 78px; padding: 13px; }
+      .drop-icon { width: 40px; height: 40px; }
+      .upload-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .button { min-width: 0; padding: 0 10px; font-size: 12px; }
+      .image-stage { height: 340px; min-height: 340px; }
+      .panel-head { min-height: 54px; padding: 0 13px; }
+      .canvas-foot { padding: 0 13px; }
+      .model-meta { display: none; }
+      .report-body { padding: 0 14px 18px; }
+      .mobile-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 30;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        height: 62px;
+        background: #111b24;
+        border-top: 1px solid #2a3742;
       }
+      .mobile-nav a {
+        display: grid;
+        place-items: center;
+        gap: 2px;
+        padding: 8px 0 6px;
+        color: #8295a4;
+        text-decoration: none;
+        font-size: 9px;
+      }
+      .mobile-nav a.active { color: #5be0e7; }
+      .mobile-nav svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
     }
   </style>
-  <link rel="stylesheet" href="app.css" />
-  <script src="ui.js" defer></script>
 </head>
-
 <body>
-  <h2>单张图片检测</h2>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="WeldSight 首页">
+        <span class="brand-mark">W</span>
+        <span class="brand-copy"><strong>WeldSight</strong><span>焊缝缺陷智能检测</span></span>
+      </a>
+      <div class="topbar-context">工业射线检测工作台</div>
+      <div class="service-state">检测服务在线</div>
+    </header>
 
-  <div class="upload-container">
-    <label for="imgfile" class="file-label">选择图片文件</label>
-    <input id="imgfile" type="file" accept="image/*" />
-    <button id="btnImg">上传并检测</button>
+    <aside class="sidebar">
+      <nav class="nav-list" aria-label="主要导航">
+        <a class="nav-link" href="index.html">
+          <svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>首页</span>
+        </a>
+        <a class="nav-link active" href="img.html" aria-current="page">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg><span>图片检测</span>
+        </a>
+        <a class="nav-link" href="vid.html">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 9 5 3-5 3zM7 4v16M17 4v16"/></svg><span>视频检测</span>
+        </a>
+        <a class="nav-link" href="cam.html">
+          <svg viewBox="0 0 24 24"><path d="M5 8h3l1.5-2h5L16 8h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z"/><circle cx="12" cy="14" r="3.5"/></svg><span>实时检测</span>
+        </a>
+      </nav>
+      <p class="sidebar-note">WELDSIGHT / RT<br>AI-ASSISTED REVIEW</p>
+    </aside>
+
+    <main>
+      <div class="page-frame">
+        <div class="page-head">
+          <div>
+            <h1>图片检测与 AI 复核</h1>
+            <p>YOLO 定位候选缺陷，Kimi 复核原图与标注结果并生成报告。</p>
+          </div>
+          <div class="page-step"><strong>01</strong> 上传底片 <span>→</span> <strong>02</strong> 模型检测 <span>→</span> <strong>03</strong> AI 复核</div>
+        </div>
+
+        <section class="upload-strip" aria-label="上传图片">
+          <label id="dropZone" class="drop-zone" for="file">
+            <span class="drop-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+            </span>
+            <span class="drop-copy">
+              <strong id="dropTitle">拖拽或选择射线底片</strong>
+              <span id="dropHint">支持 PNG、JPEG、WebP；建议分辨率不超过 4K</span>
+            </span>
+            <input id="file" type="file" accept="image/png,image/jpeg,image/webp">
+          </label>
+          <div class="upload-actions">
+            <button id="run" class="button button-primary" type="button" disabled>
+              <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/><path d="M4 12h11"/></svg>
+              开始检测并复核
+            </button>
+            <button id="download" class="button button-secondary" type="button" disabled>
+              <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 20h14"/></svg>
+              下载报告
+            </button>
+          </div>
+        </section>
+
+        <div id="statusRail" class="status-rail" data-state="idle" role="status" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="statusText">等待上传射线底片</span>
+          <span class="status-progress"></span>
+        </div>
+
+        <div class="workspace">
+          <section class="canvas-panel">
+            <div class="panel-head">
+              <div class="panel-title"><h2>检测结果</h2><span id="canvasState">未载入图片</span></div>
+              <div class="view-tabs" aria-label="图像视图">
+                <button id="originalTab" class="view-tab active" type="button" disabled>原图</button>
+                <button id="resultTab" class="view-tab" type="button" disabled>检测图</button>
+              </div>
+            </div>
+            <div id="imageStage" class="image-stage">
+              <div class="empty-canvas">
+                <svg viewBox="0 0 48 48"><rect x="7" y="8" width="34" height="30" rx="3"/><circle cx="17" cy="18" r="3"/><path d="m9 34 10-9 7 7 5-5 8 7"/></svg>
+                <strong>检测画布尚未载入图片</strong>
+                <span>选择底片后可先检查原图，模型处理完成后在原图与检测图之间切换。</span>
+              </div>
+              <img id="resultImage" class="result-image" alt="射线底片预览">
+              <div id="stageWorking" class="stage-working">
+                <div class="working-copy"><span class="spinner"></span><strong>正在分析底片</strong><span>YOLO 检测完成后将继续进行 Kimi AI 复核</span></div>
+              </div>
+            </div>
+            <div class="canvas-foot">
+              <span id="fileMeta" class="file-meta">尚未选择文件</span>
+              <span class="model-meta">YOLO · CONF 0.25 · KIMI VISION</span>
+            </div>
+          </section>
+
+          <aside id="reportPanel" class="report-panel" aria-label="综合报告">
+            <div class="panel-head">
+              <div class="panel-title"><h2>综合报告</h2><span id="reportId"></span></div>
+              <span id="reportStatus" class="report-status">等待检测</span>
+            </div>
+            <div class="report-body">
+              <div class="report-empty">
+                <div class="report-empty-inner">
+                  <svg viewBox="0 0 48 48"><path d="M14 6h16l7 7v29H14z"/><path d="M30 6v8h7M20 23h11M20 29h11M20 35h7"/></svg>
+                  <strong>报告将在检测完成后生成</strong>
+                  <span>包含 YOLO 候选统计、AI 复核结论、图像质量、疑似误报与复核建议。</span>
+                </div>
+              </div>
+              <div class="report-content">
+                <div class="summary-row">
+                  <div class="summary-cell"><span>YOLO 候选数</span><strong id="count">0</strong></div>
+                  <div class="summary-cell"><span>AI 复核状态</span><strong id="aiStatus" class="small">—</strong></div>
+                </div>
+                <section class="report-section">
+                  <div class="section-label"><span>综合结论</span><span id="risk" class="risk">待评估</span></div>
+                  <p id="conclusion" class="conclusion"></p>
+                </section>
+                <section class="report-section">
+                  <div class="section-label">缺陷类别统计</div>
+                  <ul id="classes" class="class-list"></ul>
+                </section>
+                <section class="report-section">
+                  <div class="section-label">AI 复核发现</div>
+                  <ul id="findings" class="finding-list"></ul>
+                </section>
+                <section class="report-section">
+                  <div class="section-label">复核建议</div>
+                  <ul id="recommendations" class="finding-list"></ul>
+                </section>
+                <section class="report-section">
+                  <p id="disclaimer" class="disclaimer"></p>
+                  <details>
+                    <summary>查看原始 JSON 数据</summary>
+                    <pre id="aiDetail"></pre>
+                  </details>
+                </section>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </main>
   </div>
 
-  <div class="result-container">
-    <img id="imgRes" style="max-width:90%;" />
-  </div>
-
-  <p><a href="index.html" class="back-link">返回首页</a></p>
+  <nav class="mobile-nav" aria-label="移动端导航">
+    <a href="index.html"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9H3z"/></svg>首页</a>
+    <a class="active" href="img.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg>图片</a>
+    <a href="vid.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 9 5 3-5 3z"/></svg>视频</a>
+    <a href="cam.html"><svg viewBox="0 0 24 24"><path d="M5 8h3l2-2h4l2 2h3v11H5z"/><circle cx="12" cy="14" r="3"/></svg>实时</a>
+  </nav>
 
   <script>
-    document.getElementById('btnImg').onclick = async () => {
-      const f = document.getElementById('imgfile').files[0];
-      if (!f) return alert('请选择图片');
+    const fileInput = document.getElementById('file');
+    const dropZone = document.getElementById('dropZone');
+    const runButton = document.getElementById('run');
+    const downloadButton = document.getElementById('download');
+    const statusRail = document.getElementById('statusRail');
+    const statusText = document.getElementById('statusText');
+    const imageStage = document.getElementById('imageStage');
+    const resultImage = document.getElementById('resultImage');
+    const stageWorking = document.getElementById('stageWorking');
+    const originalTab = document.getElementById('originalTab');
+    const resultTab = document.getElementById('resultTab');
+    const reportPanel = document.getElementById('reportPanel');
+    let selectedFile = null;
+    let originalUrl = '';
+    let annotatedUrl = '';
+    let latestReport = null;
 
-      // 显示加载状态
-      const btn = document.getElementById('btnImg');
-      const originalText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = '检测中...';
+    const aiStatusLabels = {
+      completed: '复核完成',
+      not_configured: '未配置',
+      disabled: '已关闭',
+      failed: '复核失败'
+    };
+    const riskLabels = { low: '低风险', medium: '中风险', high: '高风险' };
 
-      try {
-        const fd = new FormData();
-        fd.append('image', f);
-        const res = await fetch('/detect_image', { method: 'POST', body: fd });
+    function setStatus(message, state = 'idle') {
+      statusText.textContent = message;
+      statusRail.dataset.state = state;
+    }
 
-        if (!res.ok) throw new Error('服务器错误');
+    function formatBytes(bytes) {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    }
 
-        const blob = await res.blob();
-        document.getElementById('imgRes').src = URL.createObjectURL(blob);
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        // 恢复按钮状态
-        btn.disabled = false;
-        btn.textContent = originalText;
+    function selectFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        setStatus('请选择 PNG、JPEG 或 WebP 图片。', 'error');
+        return;
+      }
+      selectedFile = file;
+      if (originalUrl) URL.revokeObjectURL(originalUrl);
+      originalUrl = URL.createObjectURL(file);
+      annotatedUrl = '';
+      latestReport = null;
+      resultImage.src = originalUrl;
+      resultImage.alt = '原始射线底片';
+      imageStage.classList.add('has-image');
+      reportPanel.classList.remove('ready');
+      originalTab.disabled = false;
+      resultTab.disabled = true;
+      originalTab.classList.add('active');
+      resultTab.classList.remove('active');
+      runButton.disabled = false;
+      downloadButton.disabled = true;
+      document.getElementById('dropTitle').textContent = file.name;
+      document.getElementById('dropHint').textContent = `${formatBytes(file.size)} · ${file.type || '图像文件'} · 点击可重新选择`;
+      document.getElementById('fileMeta').textContent = `${file.name} · ${formatBytes(file.size)}`;
+      document.getElementById('canvasState').textContent = '原图预览';
+      document.getElementById('reportStatus').textContent = '等待检测';
+      document.getElementById('reportStatus').className = 'report-status';
+      setStatus('图片已载入，可以开始检测。', 'idle');
+    }
+
+    function switchView(view) {
+      if (view === 'result' && !annotatedUrl) return;
+      const isOriginal = view === 'original';
+      resultImage.src = isOriginal ? originalUrl : annotatedUrl;
+      resultImage.alt = isOriginal ? '原始射线底片' : 'YOLO 检测标注图';
+      originalTab.classList.toggle('active', isOriginal);
+      resultTab.classList.toggle('active', !isOriginal);
+      document.getElementById('canvasState').textContent = isOriginal ? '原图预览' : '检测标注图';
+    }
+
+    function textFinding(title, description) {
+      const li = document.createElement('li');
+      li.className = 'finding-row';
+      const strong = document.createElement('strong');
+      strong.textContent = title;
+      const span = document.createElement('span');
+      span.textContent = description;
+      li.append(strong, span);
+      return li;
+    }
+
+    function renderReport(report) {
+      latestReport = report;
+      const review = report.ai_review || {};
+      const yolo = report.yolo || {};
+      reportPanel.classList.add('ready');
+      document.getElementById('reportId').textContent = report.report_id ? `#${report.report_id.slice(0, 8).toUpperCase()}` : '';
+      document.getElementById('count').textContent = yolo.detection_count ?? 0;
+      document.getElementById('aiStatus').textContent = aiStatusLabels[review.status] || review.status || '未知';
+      document.getElementById('conclusion').textContent = report.conclusion || '暂无综合结论。';
+      document.getElementById('disclaimer').textContent = report.disclaimer || '';
+      document.getElementById('aiDetail').textContent = JSON.stringify(review, null, 2);
+
+      const status = document.getElementById('reportStatus');
+      status.textContent = aiStatusLabels[review.status] || '报告已生成';
+      status.className = `report-status ${review.status === 'completed' ? 'completed' : 'failed'}`;
+
+      const risk = document.getElementById('risk');
+      const riskValue = review.risk_level || 'medium';
+      risk.textContent = riskLabels[riskValue] || '待评估';
+      risk.className = `risk ${riskValue}`;
+
+      const classes = document.getElementById('classes');
+      classes.replaceChildren();
+      const entries = Object.entries(yolo.class_counts || {});
+      (entries.length ? entries : [['未检出候选缺陷', 0]]).forEach(([name, count]) => {
+        const li = document.createElement('li');
+        li.className = 'class-row';
+        const label = document.createElement('span');
+        label.textContent = name;
+        const value = document.createElement('b');
+        value.textContent = count;
+        li.append(label, value);
+        classes.appendChild(li);
+      });
+
+      const findings = document.getElementById('findings');
+      findings.replaceChildren();
+      const findingItems = [];
+      (review.confirmed_findings || []).forEach(item => findingItems.push([
+        `支持：${item.class_name || '候选缺陷'}`,
+        item.reason || '视觉特征与候选结果一致。'
+      ]));
+      (review.possible_false_positives || []).forEach(item => findingItems.push([
+        `疑似误报：${item.class_name || '候选缺陷'}`,
+        item.reason || '需要人工复核。'
+      ]));
+      (review.possible_missed_defects || []).forEach(item => findingItems.push([
+        `可能漏检：${item.suspected_type || '未知类型'}`,
+        [item.location_description, item.reason].filter(Boolean).join('；') || '需要人工复核。'
+      ]));
+      if (!findingItems.length) {
+        findingItems.push(['未发现新增异常', review.message || 'AI 未提供额外缺陷发现。']);
+      }
+      findingItems.forEach(([title, description]) => findings.appendChild(textFinding(title, description)));
+
+      const recommendations = document.getElementById('recommendations');
+      recommendations.replaceChildren();
+      const recommendationItems = review.recommendations || [];
+      if (recommendationItems.length) {
+        recommendationItems.forEach((item, index) => recommendations.appendChild(textFinding(`建议 ${index + 1}`, String(item))));
+      } else {
+        recommendations.appendChild(textFinding('人工复核', '请结合适用标准和原始底片作出最终评定。'));
       }
     }
 
-    // 显示选中的文件名
-    document.getElementById('imgfile').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        document.querySelector('.file-label').textContent = `已选择: ${file.name}`;
+    fileInput.addEventListener('change', () => selectFile(fileInput.files[0]));
+    ['dragenter', 'dragover'].forEach(type => dropZone.addEventListener(type, event => {
+      event.preventDefault();
+      dropZone.classList.add('dragging');
+    }));
+    ['dragleave', 'drop'].forEach(type => dropZone.addEventListener(type, event => {
+      event.preventDefault();
+      dropZone.classList.remove('dragging');
+    }));
+    dropZone.addEventListener('drop', event => selectFile(event.dataTransfer.files[0]));
+    originalTab.addEventListener('click', () => switchView('original'));
+    resultTab.addEventListener('click', () => switchView('result'));
+
+    runButton.addEventListener('click', async () => {
+      if (!selectedFile) return;
+      runButton.disabled = true;
+      downloadButton.disabled = true;
+      stageWorking.classList.add('visible');
+      setStatus('正在执行 YOLO 检测与 Kimi AI 复核，请稍候…', 'working');
+      document.getElementById('reportStatus').textContent = '分析中';
+      try {
+        const form = new FormData();
+        form.append('image', selectedFile);
+        const response = await fetch('/detect_image_report', { method: 'POST', body: form });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || '检测请求失败');
+        annotatedUrl = payload.annotated_image;
+        resultTab.disabled = false;
+        switchView('result');
+        renderReport(payload.report);
+        downloadButton.disabled = false;
+        const aiCompleted = payload.report.ai_review.status === 'completed';
+        setStatus(
+          aiCompleted ? '检测与 AI 复核已完成，报告已生成。' : 'YOLO 检测完成，AI 复核未完成，请查看报告说明。',
+          aiCompleted ? 'success' : 'error'
+        );
+      } catch (error) {
+        setStatus(`处理失败：${error.message}`, 'error');
+        document.getElementById('reportStatus').textContent = '生成失败';
+        document.getElementById('reportStatus').className = 'report-status failed';
+      } finally {
+        runButton.disabled = false;
+        stageWorking.classList.remove('visible');
       }
+    });
+
+    downloadButton.addEventListener('click', () => {
+      if (!latestReport) return;
+      const blob = new Blob([JSON.stringify(latestReport, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `weldsight-report-${latestReport.report_id}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
     });
   </script>
 </body>
-
 </html>
