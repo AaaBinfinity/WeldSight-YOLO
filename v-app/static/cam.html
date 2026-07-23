@@ -1,13 +1,16 @@
 <!doctype html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080c12">
   <title>WeldSight · 实时检测</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230c121a'/%3E%3Cpath d='m7 12 18-4M7 20l18 4' stroke='%2349d7ff' stroke-width='2.5'/%3E%3C/svg%3E">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230c121a'/%3E%3Cpath d='m7 12 18-4M7 20l18 4' stroke='%2349d7ff' stroke-width='2.5'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/workbench.css">
 </head>
+
 <body>
   <div class="app-shell">
     <header class="topbar">
@@ -28,10 +31,40 @@
       <p class="nav-caption">Workspace</p>
       <nav>
         <ul class="nav-list">
-          <li><a class="nav-link" href="/"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>首页</span></a></li>
-          <li><a class="nav-link" href="/img.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 2-2 5 4"/></svg><span>图片检测</span></a></li>
-          <li><a class="nav-link" href="/vid.html"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="14" height="14" rx="2"/><path d="m17 10 4-2v8l-4-2zM8 9l4 3-4 3z"/></svg><span>视频检测</span></a></li>
-          <li><a class="nav-link active" href="/cam.html" aria-current="page"><svg viewBox="0 0 24 24"><path d="M8 6 9.5 4h5L16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><circle cx="12" cy="13" r="4"/></svg><span>实时检测</span></a></li>
+          <li><a class="nav-link" href="/"><svg viewBox="0 0 24 24">
+                <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+              </svg><span>首页</span></a></li>
+          <li><a class="nav-link" href="/img.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <circle cx="8.5" cy="9" r="1.5" />
+                <path d="m4 17 5-5 4 4 2-2 5 4" />
+              </svg><span>图片检测</span></a></li>
+          <li><a class="nav-link" href="/batch.html"><svg viewBox="0 0 24 24">
+                <rect x="4" y="4" width="7" height="7" rx="1" />
+                <rect x="13" y="4" width="7" height="7" rx="1" />
+                <rect x="4" y="13" width="7" height="7" rx="1" />
+                <path d="M16.5 13v7M13 16.5h7" />
+              </svg><span>批量检测</span></a></li>
+          <li><a class="nav-link" href="/vid.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="5" width="14" height="14" rx="2" />
+                <path d="m17 10 4-2v8l-4-2zM8 9l4 3-4 3z" />
+              </svg><span>视频检测</span></a></li>
+          <li><a class="nav-link active" href="/cam.html" aria-current="page"><svg viewBox="0 0 24 24">
+                <path d="M8 6 9.5 4h5L16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg><span>实时检测</span></a></li>
+          <li><a class="nav-link" href="/history.html"><svg viewBox="0 0 24 24">
+                <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+                <path d="M8 14h3M8 17h6" />
+              </svg><span>检测历史</span></a></li>
+          <li><a class="nav-link" href="/dashboard.html"><svg viewBox="0 0 24 24">
+                <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+              </svg><span>数据看板</span></a></li>
+          <li><a class="nav-link" href="/settings.html"><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.5 1A7 7 0 0 0 15 6L14.5 3h-5L9 6a7 7 0 0 0-1.4 1L5 6 3 9.5 5.1 11a7 7 0 0 0 0 2L3 14.5 5 18l2.6-1A7 7 0 0 0 9 18l.5 3h5l.5-3a7 7 0 0 0 1.4-1l2.6 1 2-3.5-2.1-1.5a7 7 0 0 0 .1-1z" />
+              </svg><span>系统设置</span></a></li>
         </ul>
       </nav>
       <div class="sidebar-foot">WELDSIGHT / RT<br>AI-ASSISTED REVIEW</div>
@@ -45,7 +78,8 @@
             <h1>实时检测</h1>
             <p class="page-description">选择本地摄像头并开启连续检测流。发现缺陷时，系统会在画面上触发视觉告警，并可同步播放提示音。</p>
           </div>
-          <div class="page-step"><strong>01</strong> 选择设备 <span>→</span> <strong>02</strong> 启动检测 <span>→</span> <strong>03</strong> 缺陷告警</div>
+          <div class="page-step"><strong>01</strong> 选择设备 <span>→</span> <strong>02</strong> 启动检测 <span>→</span>
+            <strong>03</strong> 缺陷告警</div>
         </section>
 
         <section class="panel control-strip">
@@ -61,7 +95,9 @@
           <div class="control-actions">
             <button class="button danger" id="btnStop" type="button" disabled>停止检测</button>
             <button class="button primary" id="btnStart" type="button" disabled>
-              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              <svg viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
               启动检测
             </button>
           </div>
@@ -71,7 +107,10 @@
           <section class="media-stage" aria-label="摄像头实时画面">
             <span class="stream-badge" id="streamBadge">OFFLINE</span>
             <div class="stage-empty" id="cameraEmpty">
-              <svg viewBox="0 0 24 24"><path d="M8 6 9.5 4h5L16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <svg viewBox="0 0 24 24">
+                <path d="M8 6 9.5 4h5L16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
               <strong>摄像头未启动</strong>
               <p>选择可用设备后启动检测，实时标注画面将在此显示。</p>
             </div>
@@ -102,16 +141,42 @@
             </div>
           </aside>
         </div>
+
+        <section class="panel live-alerts" aria-labelledby="alertTitle">
+          <div class="panel-heading">
+            <div>
+              <h2 id="alertTitle">实时告警记录</h2>
+              <span class="table-sub">检测截图按告警冷却间隔自动归档</span>
+            </div>
+            <a class="button" href="/history.html?source_type=camera">查看全部</a>
+          </div>
+          <div class="alert-list" id="alertList">
+            <p class="empty-copy" style="padding:20px">暂无实时告警记录。</p>
+          </div>
+        </section>
       </div>
     </main>
 
     <audio id="alarmSound" src="/alarm_beep.wav" preload="auto" muted></audio>
 
     <nav class="mobile-nav" aria-label="移动端导航">
-      <a href="/"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>首页</span></a>
-      <a href="/img.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m4 17 5-5 4 4 2-2 5 4"/></svg><span>图片</span></a>
-      <a href="/vid.html"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="14" height="14" rx="2"/><path d="m17 10 4-2v8l-4-2z"/></svg><span>视频</span></a>
-      <a class="active" href="/cam.html" aria-current="page"><svg viewBox="0 0 24 24"><path d="M8 6 9.5 4h5L16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><circle cx="12" cy="13" r="4"/></svg><span>实时</span></a>
+      <a href="/"><svg viewBox="0 0 24 24">
+          <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+        </svg><span>首页</span></a>
+      <a href="/img.html"><svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="m4 17 5-5 4 4 2-2 5 4" />
+        </svg><span>图片</span></a>
+      <a href="/batch.html"><svg viewBox="0 0 24 24">
+          <rect x="4" y="4" width="7" height="7" /><rect x="13" y="4" width="7" height="7" />
+          <path d="M4 13h7v7H4zM16.5 13v7M13 16.5h7" />
+        </svg><span>批量</span></a>
+      <a href="/history.html"><svg viewBox="0 0 24 24">
+          <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+        </svg><span>历史</span></a>
+      <a href="/dashboard.html"><svg viewBox="0 0 24 24">
+          <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+        </svg><span>看板</span></a>
     </nav>
   </div>
 
@@ -128,11 +193,48 @@
     const sourceSummary = document.getElementById('sourceSummary');
     const runSummary = document.getElementById('runSummary');
     const enableSound = document.getElementById('enableSound');
+    const alertList = document.getElementById('alertList');
 
     let selectedCam = -1;
     let camRunning = false;
     let pollTimer = null;
     let alarmLocked = false;
+    let lastAlertId = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[char]);
+    }
+
+    function localTime(value) {
+      if (!value) return '—';
+      return new Intl.DateTimeFormat('zh-CN', {
+        month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'
+      }).format(new Date(value));
+    }
+
+    async function loadAlerts() {
+      try {
+        const response = await fetch('/api/alerts?limit=6');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (!data.items.length) {
+          alertList.innerHTML = '<p class="empty-copy" style="padding:20px">暂无实时告警记录。</p>';
+          return;
+        }
+        alertList.innerHTML = data.items.map(record => {
+          const classes = Object.keys(record.class_counts || {}).join('、') || '待分类缺陷';
+          return `<a class="alert-row" href="/history.html?record=${record.id}">
+            <img class="alert-thumb" src="${record.annotated_image_url}" alt="${escapeHtml(record.source_name)}">
+            <span class="alert-copy"><strong>${escapeHtml(classes)}</strong><span>${localTime(record.created_at)} · ${escapeHtml(record.model_version)}</span></span>
+            <span class="alert-count">${record.detection_count} 个候选</span>
+          </a>`;
+        }).join('');
+      } catch (error) {
+        alertList.innerHTML = `<p class="empty-copy" style="padding:20px">告警记录读取失败：${escapeHtml(error.message)}</p>`;
+      }
+    }
 
     function updateCamStatus(text, tone = '', summary = text) {
       camStatusText.textContent = text;
@@ -189,7 +291,11 @@
         const res = await fetch(`/cam_status?t=${Date.now()}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const status = await res.json();
-        if (status.last_detected) triggerAlarm();
+        if (status.last_alert_id && status.last_alert_id !== lastAlertId) {
+          lastAlertId = status.last_alert_id;
+          triggerAlarm();
+          loadAlerts();
+        }
       } catch (error) {
         if (camRunning) updateCamStatus(`状态检查失败：${error.message}`, 'error', '连接异常');
       } finally {
@@ -285,10 +391,12 @@
     });
     window.addEventListener('beforeunload', () => {
       clearTimeout(pollTimer);
-      if (camRunning) fetch('/stop_cam', { keepalive: true }).catch(() => {});
+      if (camRunning) fetch('/stop_cam', { keepalive: true }).catch(() => { });
     });
 
     listCams();
+    loadAlerts();
   </script>
 </body>
+
 </html>

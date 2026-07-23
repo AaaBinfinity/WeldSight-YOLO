@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>系统设置 · WeldSight</title>
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2335d5df'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='17' font-weight='900' fill='%23042e33'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/workbench.css">
+  <link rel="stylesheet" href="/product.css">
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">W</span><span class="brand-copy"><span
+            class="brand-name">WeldSight</span><span class="brand-subtitle">焊缝缺陷智能检测</span></span></a>
+      <div class="topbar-context"><span class="context-label">工业射线检测工作台</span><span class="service-state">检测服务在线</span>
+      </div>
+    </header>
+    <aside class="sidebar">
+      <nav>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="/"><svg viewBox="0 0 24 24">
+                <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+              </svg><span>首页</span></a></li>
+          <li><a class="nav-link" href="/img.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <circle cx="8.5" cy="9" r="1.5" />
+                <path d="m4 17 5-5 4 4 3-3 5 5" />
+              </svg><span>图片检测</span></a></li>
+          <li><a class="nav-link" href="/batch.html"><svg viewBox="0 0 24 24">
+                <rect x="4" y="4" width="7" height="7" rx="1" />
+                <rect x="13" y="4" width="7" height="7" rx="1" />
+                <rect x="4" y="13" width="7" height="7" rx="1" />
+                <path d="M16.5 13v7M13 16.5h7" />
+              </svg><span>批量检测</span></a></li>
+          <li><a class="nav-link" href="/vid.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="m10 9 5 3-5 3zM7 4v16M17 4v16" />
+              </svg><span>视频检测</span></a></li>
+          <li><a class="nav-link" href="/cam.html"><svg viewBox="0 0 24 24">
+                <path d="M5 8h3l1.5-2h5L16 8h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z" />
+                <circle cx="12" cy="14" r="3.5" />
+              </svg><span>实时检测</span></a></li>
+          <li><a class="nav-link" href="/history.html"><svg viewBox="0 0 24 24">
+                <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+                <path d="M8 14h3M8 17h6" />
+              </svg><span>检测历史</span></a></li>
+          <li><a class="nav-link" href="/dashboard.html"><svg viewBox="0 0 24 24">
+                <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+              </svg><span>数据看板</span></a></li>
+          <li><a class="nav-link active" href="/settings.html" aria-current="page"><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.5 1A7 7 0 0 0 15 6L14.5 3h-5L9 6a7 7 0 0 0-1.4 1L5 6 3 9.5 5.1 11a7 7 0 0 0 0 2L3 14.5 5 18l2.6-1A7 7 0 0 0 9 18l.5 3h5l.5-3a7 7 0 0 0 1.4-1l2.6 1 2-3.5-2.1-1.5a7 7 0 0 0 .1-1z" />
+              </svg><span>系统设置</span></a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-foot">WELDSIGHT / RT<br>AI-ASSISTED REVIEW</div>
+    </aside>
+
+    <main>
+      <div class="page-frame">
+        <div class="page-head">
+          <div>
+            <h1>系统设置</h1>
+            <p class="page-description">配置检测阈值、Kimi 复核、摄像头和报告单位信息。API Key 仅显示配置状态，不会返回完整内容。</p>
+          </div>
+          <div class="page-step">设置保存后立即应用于新任务</div>
+        </div>
+
+        <div class="settings-layout">
+          <form class="panel settings-form" id="settingsForm">
+            <section class="settings-section">
+              <h2>报告信息</h2>
+              <p>这些内容将写入新检测记录和 PDF 质检报告。</p>
+              <div class="settings-fields">
+                <div class="form-field"><label for="projectName">默认项目名称</label><input class="input" id="projectName"
+                    maxlength="100"></div>
+                <div class="form-field"><label for="organization">检测单位</label><input class="input" id="organization"
+                    maxlength="120"></div>
+                <div class="form-field"><label for="defaultReviewer">默认复核人员</label><input class="input"
+                    id="defaultReviewer" maxlength="80"></div>
+              </div>
+            </section>
+            <section class="settings-section">
+              <h2>YOLO 检测</h2>
+              <p>置信度越低，候选框越多；建议结合人工复核结果进行调整。</p>
+              <div class="settings-fields">
+                <div class="form-field"><label for="confThreshold">默认置信度阈值 <strong
+                      id="confValue">0.25</strong></label><input id="confThreshold" type="range" min="0.05" max="0.95"
+                    step="0.05"></div>
+                <div class="form-field"><label for="cameraIndex">默认摄像头索引</label><input class="input" id="cameraIndex"
+                    type="number" min="0" step="1"></div>
+                <div class="form-field"><label for="alertCooldown">实时告警冷却时间（秒）</label><input class="input"
+                    id="alertCooldown" type="number" min="1" max="600" step="1"></div>
+              </div>
+            </section>
+            <section class="settings-section">
+              <h2>Kimi Vision 复核</h2>
+              <p>复核在后台执行；模型过载时 YOLO 结果会先保存，用户可稍后重新复核。</p>
+              <div class="settings-fields">
+                <div class="form-field"><label for="kimiEnabled">启用 AI 复核</label><select class="select"
+                    id="kimiEnabled">
+                    <option value="true">启用</option>
+                    <option value="false">关闭</option>
+                  </select></div>
+                <div class="form-field"><label for="kimiModel">主视觉模型</label><input class="input" id="kimiModel"></div>
+                <div class="form-field"><label for="kimiFallbacks">备用模型（逗号分隔）</label><input class="input"
+                    id="kimiFallbacks"></div>
+                <div class="form-field"><label for="kimiRetries">单模型最大重试次数</label><input class="input" id="kimiRetries"
+                    type="number" min="1" max="8"></div>
+              </div>
+            </section>
+            <div class="settings-save"><span class="form-message" id="settingsMessage"></span><button
+                class="button primary" type="submit">保存并应用</button></div>
+          </form>
+
+          <aside class="panel settings-aside">
+            <div class="panel-heading" style="margin:-20px -20px 18px">
+              <h2>服务状态</h2><span class="panel-kicker">RUNTIME</span>
+            </div>
+            <div class="service-list">
+              <div class="service-row"><span>YOLO 模型</span><strong id="modelStatus">检查中</strong></div>
+              <div class="service-row"><span>模型文件</span><strong id="modelPath">—</strong></div>
+              <div class="service-row"><span>Moonshot API Key</span><strong id="apiKeyStatus">检查中</strong></div>
+              <div class="service-row"><span>数据存储</span><strong>SQLite / 本地文件</strong></div>
+              <div class="service-row"><span>报告格式</span><strong>PDF + JSON</strong></div>
+            </div>
+            <p class="empty-copy" style="margin-top:18px">API Key 继续从项目根目录的 <code>.env</code> 读取。此页面不会显示、回传或覆盖完整密钥。</p>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <nav class="mobile-nav">
+      <a href="/"><svg viewBox="0 0 24 24">
+          <path d="m3 11 9-8 9 8v9H3z" />
+        </svg><span>首页</span></a>
+      <a href="/img.html"><svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="m4 17 5-5 4 4 3-3 5 5" />
+        </svg><span>图片</span></a>
+      <a href="/batch.html"><svg viewBox="0 0 24 24">
+          <rect x="4" y="4" width="7" height="7" />
+          <rect x="13" y="4" width="7" height="7" />
+          <path d="M8 14v6M5 17h6" />
+        </svg><span>批量</span></a>
+      <a href="/history.html"><svg viewBox="0 0 24 24">
+          <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+        </svg><span>历史</span></a>
+      <a class="active" href="/settings.html"><svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M20 12a8 8 0 0 0-.2-2l2-1-2-3-2 1a8 8 0 0 0-2-1L15 3H9L8 6a8 8 0 0 0-2 1L4 6 2 9l2 1a8 8 0 0 0 0 4l-2 1 2 3 2-1a8 8 0 0 0 2 1l1 3h6l1-3a8 8 0 0 0 2-1l2 1 2-3-2-1a8 8 0 0 0 0-2z" />
+        </svg><span>设置</span></a>
+    </nav>
+  </div>
+
+  <script>
+    const fields = {
+      project_name: document.getElementById('projectName'),
+      organization: document.getElementById('organization'),
+      default_reviewer: document.getElementById('defaultReviewer'),
+      conf_thresh: document.getElementById('confThreshold'),
+      camera_default_index: document.getElementById('cameraIndex'),
+      alert_cooldown_seconds: document.getElementById('alertCooldown'),
+      kimi_review_enabled: document.getElementById('kimiEnabled'),
+      kimi_model: document.getElementById('kimiModel'),
+      kimi_fallback_models: document.getElementById('kimiFallbacks'),
+      kimi_max_retries: document.getElementById('kimiRetries')
+    };
+
+    async function loadSettings() {
+      const message = document.getElementById('settingsMessage');
+      try {
+        const response = await fetch('/api/settings');
+        if (!response.ok) throw new Error('设置读取失败');
+        const data = await response.json();
+        fields.project_name.value = data.project_name || '';
+        fields.organization.value = data.organization || '';
+        fields.default_reviewer.value = data.default_reviewer || '';
+        fields.conf_thresh.value = data.conf_thresh ?? 0.25;
+        fields.camera_default_index.value = data.camera_default_index ?? 0;
+        fields.alert_cooldown_seconds.value = data.alert_cooldown_seconds ?? 8;
+        fields.kimi_review_enabled.value = String(Boolean(data.kimi_review_enabled));
+        fields.kimi_model.value = data.kimi_model || 'kimi-k3';
+        fields.kimi_fallback_models.value = (data.kimi_fallback_models || []).join(', ');
+        fields.kimi_max_retries.value = data.kimi_max_retries ?? 2;
+        document.getElementById('confValue').textContent = Number(data.conf_thresh ?? 0.25).toFixed(2);
+        document.getElementById('modelStatus').textContent = data.model_loaded ? '已加载' : '未加载';
+        document.getElementById('modelPath').textContent = data.model_path || '—';
+        document.getElementById('apiKeyStatus').textContent = data.api_key_configured ? '已通过 .env 配置' : '未配置';
+      } catch (error) {
+        message.className = 'form-message error';
+        message.textContent = error.message;
+      }
+    }
+
+    document.getElementById('confThreshold').addEventListener('input', event => {
+      document.getElementById('confValue').textContent = Number(event.target.value).toFixed(2);
+    });
+
+    document.getElementById('settingsForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const message = document.getElementById('settingsMessage');
+      message.className = 'form-message';
+      message.textContent = '正在保存…';
+      const payload = {
+        project_name: fields.project_name.value.trim(),
+        organization: fields.organization.value.trim(),
+        default_reviewer: fields.default_reviewer.value.trim(),
+        conf_thresh: Number(fields.conf_thresh.value),
+        camera_default_index: Number(fields.camera_default_index.value),
+        alert_cooldown_seconds: Number(fields.alert_cooldown_seconds.value),
+        kimi_review_enabled: fields.kimi_review_enabled.value === 'true',
+        kimi_model: fields.kimi_model.value.trim(),
+        kimi_fallback_models: fields.kimi_fallback_models.value.split(',').map(value => value.trim()).filter(Boolean),
+        kimi_max_retries: Number(fields.kimi_max_retries.value)
+      };
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || '设置保存失败');
+        message.className = 'form-message success';
+        message.textContent = '设置已保存，并已应用到后续检测任务。';
+        await loadSettings();
+      } catch (error) {
+        message.className = 'form-message error';
+        message.textContent = error.message;
+      }
+    });
+    loadSettings();
+  </script>
+</body>
+
+</html>

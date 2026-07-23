@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>批量图片检测 · WeldSight</title>
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2335d5df'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='17' font-weight='900' fill='%23042e33'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/workbench.css">
+  <link rel="stylesheet" href="/product.css">
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">W</span><span class="brand-copy"><span
+            class="brand-name">WeldSight</span><span class="brand-subtitle">焊缝缺陷智能检测</span></span></a>
+      <div class="topbar-context"><span class="context-label">工业射线检测工作台</span><span class="service-state">检测服务在线</span>
+      </div>
+    </header>
+    <aside class="sidebar">
+      <nav>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="/"><svg viewBox="0 0 24 24">
+                <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+              </svg><span>首页</span></a></li>
+          <li><a class="nav-link" href="/img.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <circle cx="8.5" cy="9" r="1.5" />
+                <path d="m4 17 5-5 4 4 3-3 5 5" />
+              </svg><span>图片检测</span></a></li>
+          <li><a class="nav-link active" href="/batch.html" aria-current="page"><svg viewBox="0 0 24 24">
+                <rect x="4" y="4" width="7" height="7" rx="1" />
+                <rect x="13" y="4" width="7" height="7" rx="1" />
+                <rect x="4" y="13" width="7" height="7" rx="1" />
+                <path d="M16.5 13v7M13 16.5h7" />
+              </svg><span>批量检测</span></a></li>
+          <li><a class="nav-link" href="/vid.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="m10 9 5 3-5 3zM7 4v16M17 4v16" />
+              </svg><span>视频检测</span></a></li>
+          <li><a class="nav-link" href="/cam.html"><svg viewBox="0 0 24 24">
+                <path d="M5 8h3l1.5-2h5L16 8h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z" />
+                <circle cx="12" cy="14" r="3.5" />
+              </svg><span>实时检测</span></a></li>
+          <li><a class="nav-link" href="/history.html"><svg viewBox="0 0 24 24">
+                <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+                <path d="M8 14h3M8 17h6" />
+              </svg><span>检测历史</span></a></li>
+          <li><a class="nav-link" href="/dashboard.html"><svg viewBox="0 0 24 24">
+                <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+              </svg><span>数据看板</span></a></li>
+          <li><a class="nav-link" href="/settings.html"><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.5 1A7 7 0 0 0 15 6L14.5 3h-5L9 6a7 7 0 0 0-1.4 1L5 6 3 9.5 5.1 11a7 7 0 0 0 0 2L3 14.5 5 18l2.6-1A7 7 0 0 0 9 18l.5 3h5l.5-3a7 7 0 0 0 1.4-1l2.6 1 2-3.5-2.1-1.5a7 7 0 0 0 .1-1z" />
+              </svg><span>系统设置</span></a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-foot">WELDSIGHT / RT<br>AI-ASSISTED REVIEW</div>
+    </aside>
+
+    <main>
+      <div class="page-frame">
+        <div class="page-head">
+          <div>
+            <h1>批量图片检测</h1>
+            <p class="page-description">一次提交多张射线底片，后台依次完成 YOLO 检测与 AI 复核，并生成批次汇总报告。</p>
+          </div>
+          <div class="page-step"><strong>01</strong> 选择文件 <span>→</span> <strong>02</strong> 队列处理 <span>→</span>
+            <strong>03</strong> 汇总报告</div>
+        </div>
+
+        <div class="batch-layout">
+          <section>
+            <label class="batch-drop" id="batchDrop" for="batchFiles">
+              <span><svg viewBox="0 0 48 48">
+                  <path d="M24 31V8m0 0-8 8m8-8 8 8" />
+                  <path d="M9 28v9a3 3 0 0 0 3 3h24a3 3 0 0 0 3-3v-9" />
+                </svg><strong id="batchDropTitle">选择或拖入多张射线底片</strong><span id="batchDropHint">支持 PNG、JPEG、WebP；单批次最多 50
+                  张</span></span>
+              <input id="batchFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+            </label>
+            <div class="batch-options">
+              <div class="form-field"><label for="batchName">批次名称</label><input class="input" id="batchName"
+                  placeholder="例如：A 区管线抽检"></div>
+              <div class="form-field"><label for="batchProject">项目名称</label><input class="input" id="batchProject">
+              </div>
+              <div class="form-field"><label for="batchReviewer">默认复核人</label><input class="input" id="batchReviewer">
+              </div>
+              <div class="form-field"><label for="batchThreshold">检测置信度 <strong
+                    id="batchThresholdValue">0.25</strong></label><input id="batchThreshold" type="range" min="0.05"
+                  max="0.95" value="0.25" step="0.05"></div>
+            </div>
+            <div class="form-actions"><span class="form-message" id="batchMessage"></span><button class="button primary"
+                id="startBatch" type="button" disabled>开始批量检测</button></div>
+
+            <section class="panel" style="margin-top:16px">
+              <div class="panel-heading">
+                <h2>任务队列</h2><span class="panel-kicker" id="queueCount">0 FILES</span>
+              </div>
+              <div class="queue-list" id="queueList">
+                <div class="table-empty">尚未选择检测图片。</div>
+              </div>
+            </section>
+          </section>
+
+          <aside>
+            <section class="panel" style="padding:20px">
+              <div class="panel-heading" style="margin:-20px -20px 0">
+                <h2>批次进度</h2><span class="panel-kicker" id="batchStatus">IDLE</span>
+              </div>
+              <div class="batch-progress">
+                <div class="batch-progress-head"><span id="progressText">等待提交任务</span><strong
+                    id="progressValue">0%</strong></div>
+                <div class="batch-progress-track">
+                  <div class="batch-progress-fill" id="batchProgressFill"></div>
+                </div>
+              </div>
+              <div class="batch-summary">
+                <div><span>已处理</span><strong id="processedCount">0</strong></div>
+                <div><span>完成</span><strong id="completedCount">0</strong></div>
+                <div><span>失败</span><strong id="failedCount">0</strong></div>
+              </div>
+              <div class="form-actions">
+                <a class="button" id="batchHistoryLink" href="/history.html">查看记录</a>
+                <a class="button primary hidden" id="batchPdf" href="#" target="_blank">下载汇总 PDF</a>
+              </div>
+            </section>
+
+            <section class="panel" style="margin-top:16px">
+              <div class="panel-heading">
+                <h2>最近批次</h2><span class="panel-kicker">RECENT</span>
+              </div>
+              <div class="queue-list" id="recentBatches">
+                <div class="table-empty">正在读取批次…</div>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <nav class="mobile-nav">
+      <a href="/"><svg viewBox="0 0 24 24">
+          <path d="m3 11 9-8 9 8v9H3z" />
+        </svg><span>首页</span></a>
+      <a href="/img.html"><svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="m4 17 5-5 4 4 3-3 5 5" />
+        </svg><span>图片</span></a>
+      <a class="active" href="/batch.html"><svg viewBox="0 0 24 24">
+          <rect x="4" y="4" width="7" height="7" />
+          <rect x="13" y="4" width="7" height="7" />
+          <path d="M8 14v6M5 17h6" />
+        </svg><span>批量</span></a>
+      <a href="/history.html"><svg viewBox="0 0 24 24">
+          <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+        </svg><span>历史</span></a>
+      <a href="/dashboard.html"><svg viewBox="0 0 24 24">
+          <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+        </svg><span>看板</span></a>
+    </nav>
+  </div>
+
+  <script>
+    const batchFiles = document.getElementById('batchFiles');
+    const batchDrop = document.getElementById('batchDrop');
+    const startBatchButton = document.getElementById('startBatch');
+    let selectedFiles = [];
+    let activeBatchId = '';
+    let pollTimer = null;
+    const aiStatusLabels = {
+      queued: '排队中',
+      processing: '复核中',
+      completed: '已完成',
+      failed: '失败',
+      not_configured: '未配置',
+      disabled: '已关闭'
+    };
+
+    function formatBytes(bytes) {
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    }
+
+    function setFiles(files) {
+      const supported = [...files].filter(file => /\.(png|jpe?g|webp)$/i.test(file.name)).slice(0, 50);
+      selectedFiles = supported;
+      document.getElementById('batchDropTitle').textContent = supported.length ? `已选择 ${supported.length} 张底片` : '选择或拖入多张射线底片';
+      document.getElementById('batchDropHint').textContent = supported.length ? `合计 ${formatBytes(supported.reduce((sum, file) => sum + file.size, 0))} · 可继续重新选择` : '支持 PNG、JPEG、WebP；单批次最多 50 张';
+      document.getElementById('queueCount').textContent = `${supported.length} FILES`;
+      startBatchButton.disabled = !supported.length;
+      document.getElementById('queueList').innerHTML = supported.length
+        ? supported.map((file, index) => `<div class="queue-item"><div><strong>${index + 1}. ${file.name.replace(/[<>]/g, '')}</strong><span>${formatBytes(file.size)} · 等待提交</span></div><span class="status-badge">等待</span></div>`).join('')
+        : '<div class="table-empty">尚未选择检测图片。</div>';
+    }
+
+    async function loadSettings() {
+      try {
+        const settings = await fetch('/api/settings').then(response => response.json());
+        document.getElementById('batchProject').value = settings.project_name || '';
+        document.getElementById('batchReviewer').value = settings.default_reviewer || '';
+        document.getElementById('batchThreshold').value = settings.conf_thresh ?? 0.25;
+        document.getElementById('batchThresholdValue').textContent = Number(settings.conf_thresh ?? 0.25).toFixed(2);
+      } catch (_) { }
+    }
+
+    async function loadRecentBatches() {
+      try {
+        const data = await fetch('/api/batches?limit=8').then(response => response.json());
+        document.getElementById('recentBatches').innerHTML = data.items.length
+          ? data.items.map(batch => `<a class="queue-item" href="/history.html?batch_id=${batch.id}"><div><strong>${batch.name.replace(/[<>]/g, '')}</strong><span>${new Date(batch.created_at).toLocaleString('zh-CN')} · ${batch.completed}/${batch.total} 完成</span></div><span class="status-badge ${batch.status.startsWith('completed') ? 'success' : batch.status === 'failed' ? 'error' : 'working'}">${batch.progress}%</span></a>`).join('')
+          : '<div class="table-empty">暂无批量检测任务。</div>';
+      } catch (_) {
+        document.getElementById('recentBatches').innerHTML = '<div class="table-empty">批次读取失败。</div>';
+      }
+    }
+
+    function renderBatch(batch) {
+      const progress = Number(batch.progress || 0);
+      document.getElementById('batchStatus').textContent = String(batch.status || 'processing').toUpperCase();
+      document.getElementById('progressText').textContent = batch.status.startsWith('completed') ? '批次处理完成' : '正在进行 YOLO 检测并提交 AI 复核';
+      document.getElementById('progressValue').textContent = `${progress}%`;
+      document.getElementById('batchProgressFill').style.width = `${progress}%`;
+      document.getElementById('processedCount').textContent = batch.processed;
+      document.getElementById('completedCount').textContent = batch.completed;
+      document.getElementById('failedCount').textContent = batch.failed;
+      document.getElementById('batchHistoryLink').href = `/history.html?batch_id=${batch.id}`;
+      if (batch.status.startsWith('completed')) {
+        clearTimeout(pollTimer);
+        document.getElementById('batchPdf').href = `/api/batches/${batch.id}/pdf`;
+        document.getElementById('batchPdf').classList.remove('hidden');
+        document.getElementById('batchMessage').className = 'form-message success';
+        document.getElementById('batchMessage').textContent = '批次检测完成，AI 复核会在后台继续更新。';
+        startBatchButton.disabled = false;
+        loadRecentBatches();
+      }
+    }
+
+    async function pollBatch() {
+      if (!activeBatchId) return;
+      try {
+        const response = await fetch(`/api/batches/${activeBatchId}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || '批次状态读取失败');
+        renderBatch(data.batch);
+        const states = new Map(data.records.map(record => [record.source_name, record]));
+        document.getElementById('queueList').innerHTML = selectedFiles.map((file, index) => {
+          const record = states.get(file.name);
+          return `<div class="queue-item"><div><strong>${index + 1}. ${file.name.replace(/[<>]/g, '')}</strong><span>${record ? `${record.detection_count} 处候选 · AI ${aiStatusLabels[record.ai_status] || record.ai_status}` : '队列处理中'}</span></div><span class="status-badge ${record ? 'success' : 'working'}">${record ? 'YOLO 完成' : '处理中'}</span></div>`;
+        }).join('');
+        if (!data.batch.status.startsWith('completed') && data.batch.status !== 'failed') pollTimer = setTimeout(pollBatch, 1000);
+      } catch (error) {
+        document.getElementById('batchMessage').className = 'form-message error';
+        document.getElementById('batchMessage').textContent = error.message;
+        startBatchButton.disabled = false;
+      }
+    }
+
+    startBatchButton.addEventListener('click', async () => {
+      if (!selectedFiles.length) return;
+      startBatchButton.disabled = true;
+      document.getElementById('batchMessage').className = 'form-message';
+      document.getElementById('batchMessage').textContent = '正在创建批次任务…';
+      document.getElementById('batchPdf').classList.add('hidden');
+      const form = new FormData();
+      selectedFiles.forEach(file => form.append('images', file));
+      form.append('name', document.getElementById('batchName').value.trim());
+      form.append('project_name', document.getElementById('batchProject').value.trim());
+      form.append('reviewer', document.getElementById('batchReviewer').value.trim());
+      form.append('confidence_threshold', document.getElementById('batchThreshold').value);
+      try {
+        const response = await fetch('/api/batches', { method: 'POST', body: form });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || '创建批次失败');
+        activeBatchId = data.batch.id;
+        renderBatch(data.batch);
+        pollBatch();
+      } catch (error) {
+        document.getElementById('batchMessage').className = 'form-message error';
+        document.getElementById('batchMessage').textContent = error.message;
+        startBatchButton.disabled = false;
+      }
+    });
+
+    batchFiles.addEventListener('change', () => setFiles(batchFiles.files));
+    ['dragenter', 'dragover'].forEach(type => batchDrop.addEventListener(type, event => { event.preventDefault(); batchDrop.classList.add('dragover'); }));
+    ['dragleave', 'drop'].forEach(type => batchDrop.addEventListener(type, event => { event.preventDefault(); batchDrop.classList.remove('dragover'); }));
+    batchDrop.addEventListener('drop', event => setFiles(event.dataTransfer.files));
+    document.getElementById('batchThreshold').addEventListener('input', event => {
+      document.getElementById('batchThresholdValue').textContent = Number(event.target.value).toFixed(2);
+    });
+    window.addEventListener('beforeunload', () => clearTimeout(pollTimer));
+    loadSettings();
+    loadRecentBatches();
+  </script>
+</body>
+
+</html>

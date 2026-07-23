@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import httpx
-from openai import APITimeoutError
+from openai import APITimeoutError, RateLimitError
 
 
 APP_ROOT = Path(__file__).resolve().parents[1] / 'v-app' / 'app'
@@ -85,6 +85,45 @@ class AiReviewerTests(unittest.TestCase):
         reviewer.client = Mock()
         reviewer.client.chat.completions.create.side_effect = [
             APITimeoutError(request=httpx.Request('POST', 'https://example.test')),
+            response,
+        ]
+        result = reviewer.review(b'original', b'annotated', [])
+        self.assertEqual(result['status'], 'completed')
+        self.assertEqual(
+            reviewer.client.chat.completions.create.call_count,
+            2,
+        )
+        sleep.assert_called_once_with(0.01)
+
+    def test_rate_limit_overload_retries_without_blocking_yolo_result(self):
+        sleep = Mock()
+        reviewer = KimiVisionReviewer(
+            api_key='test-only',
+            max_retries=2,
+            retry_base_seconds=0.01,
+            sleep=sleep,
+        )
+        response = SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(
+                        content=json.dumps({
+                            'overall_assessment': 'uncertain',
+                            'risk_level': 'medium',
+                            'summary': '429 重试后完成。',
+                        }, ensure_ascii=False)
+                    )
+                )
+            ]
+        )
+        request = httpx.Request('POST', 'https://example.test')
+        reviewer.client = Mock()
+        reviewer.client.chat.completions.create.side_effect = [
+            RateLimitError(
+                'The engine is currently overloaded',
+                response=httpx.Response(429, request=request),
+                body={'error': {'type': 'engine_overloaded_error'}},
+            ),
             response,
         ]
         result = reviewer.review(b'original', b'annotated', [])

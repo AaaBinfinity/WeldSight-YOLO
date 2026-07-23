@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>检测历史中心 · WeldSight</title>
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2335d5df'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='17' font-weight='900' fill='%23042e33'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/workbench.css">
+  <link rel="stylesheet" href="/product.css">
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="WeldSight 首页">
+        <span class="brand-mark">W</span>
+        <span class="brand-copy"><span class="brand-name">WeldSight</span><span
+            class="brand-subtitle">焊缝缺陷智能检测</span></span>
+      </a>
+      <div class="topbar-context"><span class="context-label">工业射线检测工作台</span><span class="service-state">检测服务在线</span>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <nav>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="/"><svg viewBox="0 0 24 24">
+                <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+              </svg><span>首页</span></a></li>
+          <li><a class="nav-link" href="/img.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <circle cx="8.5" cy="9" r="1.5" />
+                <path d="m4 17 5-5 4 4 3-3 5 5" />
+              </svg><span>图片检测</span></a></li>
+          <li><a class="nav-link" href="/batch.html"><svg viewBox="0 0 24 24">
+                <rect x="4" y="4" width="7" height="7" rx="1" />
+                <rect x="13" y="4" width="7" height="7" rx="1" />
+                <rect x="4" y="13" width="7" height="7" rx="1" />
+                <path d="M16.5 13v7M13 16.5h7" />
+              </svg><span>批量检测</span></a></li>
+          <li><a class="nav-link" href="/vid.html"><svg viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="m10 9 5 3-5 3zM7 4v16M17 4v16" />
+              </svg><span>视频检测</span></a></li>
+          <li><a class="nav-link" href="/cam.html"><svg viewBox="0 0 24 24">
+                <path d="M5 8h3l1.5-2h5L16 8h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z" />
+                <circle cx="12" cy="14" r="3.5" />
+              </svg><span>实时检测</span></a></li>
+          <li><a class="nav-link active" href="/history.html" aria-current="page"><svg viewBox="0 0 24 24">
+                <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+                <path d="M8 14h3M8 17h6" />
+              </svg><span>检测历史</span></a></li>
+          <li><a class="nav-link" href="/dashboard.html"><svg viewBox="0 0 24 24">
+                <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+              </svg><span>数据看板</span></a></li>
+          <li><a class="nav-link" href="/settings.html"><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.5 1A7 7 0 0 0 15 6L14.5 3h-5L9 6a7 7 0 0 0-1.4 1L5 6 3 9.5 5.1 11a7 7 0 0 0 0 2L3 14.5 5 18l2.6-1A7 7 0 0 0 9 18l.5 3h5l.5-3a7 7 0 0 0 1.4-1l2.6 1 2-3.5-2.1-1.5a7 7 0 0 0 .1-1z" />
+              </svg><span>系统设置</span></a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-foot">WELDSIGHT / RT<br>AI-ASSISTED REVIEW</div>
+    </aside>
+
+    <main>
+      <div class="page-frame">
+        <div class="page-head">
+          <div>
+            <h1>检测历史中心</h1>
+            <p class="page-description">检索原图、检测结果、AI 复核和人工处置记录，并可重新复核或导出正式报告。</p>
+          </div>
+          <div class="page-step"><strong id="recordCount">0</strong> 条检测记录</div>
+        </div>
+
+        <div class="data-toolbar">
+          <div class="filter-group">
+            <input class="input search-input" id="searchInput" type="search" placeholder="搜索文件名、项目、缺陷类别或编号">
+            <select class="select" id="sourceFilter">
+              <option value="">全部来源</option>
+              <option value="image">单图检测</option>
+              <option value="batch">批量检测</option>
+              <option value="camera">实时告警</option>
+            </select>
+            <select class="select" id="aiFilter">
+              <option value="">全部 AI 状态</option>
+              <option value="completed">复核完成</option>
+              <option value="queued">排队中</option>
+              <option value="processing">复核中</option>
+              <option value="failed">复核失败</option>
+              <option value="not_configured">未配置</option>
+            </select>
+            <select class="select" id="reviewFilter">
+              <option value="">全部人工状态</option>
+              <option value="confirmed">确认缺陷</option>
+              <option value="false_positive">确认误报</option>
+              <option value="missed_defect">确认漏报</option>
+              <option value="mixed">混合结论</option>
+              <option value="accepted">结果接受</option>
+            </select>
+          </div>
+          <button class="button" id="refreshButton" type="button">刷新记录</button>
+        </div>
+
+        <section class="panel table-panel">
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>检测样本</th>
+                  <th>时间</th>
+                  <th>来源</th>
+                  <th>候选缺陷</th>
+                  <th>AI 复核</th>
+                  <th>人工结论</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="historyRows">
+                <tr>
+                  <td class="table-empty" colspan="7">正在读取检测记录…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span id="pageSummary">第 1 页</span>
+            <div class="table-actions">
+              <button class="button" id="previousPage" type="button">上一页</button>
+              <button class="button" id="nextPage" type="button">下一页</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="mobile-nav" aria-label="移动端导航">
+      <a href="/"><svg viewBox="0 0 24 24">
+          <path d="m3 11 9-8 9 8v9H3z" />
+        </svg><span>首页</span></a>
+      <a href="/img.html"><svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="m4 17 5-5 4 4 3-3 5 5" />
+        </svg><span>图片</span></a>
+      <a href="/batch.html"><svg viewBox="0 0 24 24">
+          <rect x="4" y="4" width="7" height="7" />
+          <rect x="13" y="4" width="7" height="7" />
+          <path d="M8 14v6M5 17h6" />
+        </svg><span>批量</span></a>
+      <a class="active" href="/history.html"><svg viewBox="0 0 24 24">
+          <path d="M4 5h16v15H4zM8 3v4M16 3v4M4 10h16" />
+        </svg><span>历史</span></a>
+      <a href="/dashboard.html"><svg viewBox="0 0 24 24">
+          <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+        </svg><span>看板</span></a>
+    </nav>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="detail-drawer" id="detailDrawer" aria-label="检测记录详情" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawerTitle">检测记录</h2><span class="table-sub" id="drawerId"></span>
+      </div>
+      <div class="drawer-actions">
+        <a class="button" id="pdfButton" href="#" target="_blank">下载 PDF</a>
+        <button class="icon-button" id="closeDrawer" type="button" aria-label="关闭详情">关闭</button>
+      </div>
+    </div>
+    <div class="drawer-body" id="drawerBody">
+      <p class="empty-copy">请选择一条检测记录。</p>
+    </div>
+  </aside>
+
+  <script>
+    const historyRows = document.getElementById('historyRows');
+    const detailDrawer = document.getElementById('detailDrawer');
+    const drawerBackdrop = document.getElementById('drawerBackdrop');
+    const drawerBody = document.getElementById('drawerBody');
+    const pageSize = 20;
+    let offset = 0;
+    let total = 0;
+    let activeRecord = null;
+    let detailPoll = null;
+    const initialQuery = new URLSearchParams(window.location.search);
+    const batchFilter = initialQuery.get('batch_id') || '';
+    let requestedRecord = initialQuery.get('record') || '';
+
+    const labels = {
+      image: '单图检测', batch: '批量检测', camera: '实时告警',
+      completed: '复核完成', queued: '排队中', processing: '复核中',
+      failed: '复核失败', not_configured: '未配置', disabled: '已关闭',
+      confirmed: '确认缺陷', false_positive: '确认误报',
+      missed_defect: '确认漏报', mixed: '混合结论', accepted: '结果接受'
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[char]);
+    }
+
+    function localTime(value) {
+      if (!value) return '—';
+      return new Intl.DateTimeFormat('zh-CN', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      }).format(new Date(value));
+    }
+
+    function badge(value) {
+      const working = ['queued', 'processing'].includes(value);
+      const success = ['completed', 'confirmed', 'accepted'].includes(value);
+      const error = ['failed', 'false_positive', 'missed_defect'].includes(value);
+      return `<span class="status-badge ${working ? 'working' : success ? 'success' : error ? 'error' : ''}">${escapeHtml(labels[value] || value || '待处理')}</span>`;
+    }
+
+    async function loadRecords() {
+      historyRows.innerHTML = '<tr><td class="table-empty" colspan="7">正在读取检测记录…</td></tr>';
+      const params = new URLSearchParams({
+        q: document.getElementById('searchInput').value.trim(),
+        source_type: document.getElementById('sourceFilter').value,
+        ai_status: document.getElementById('aiFilter').value,
+        review_decision: document.getElementById('reviewFilter').value,
+        limit: String(pageSize),
+        offset: String(offset)
+      });
+      if (batchFilter) params.set('batch_id', batchFilter);
+      try {
+        const response = await fetch(`/api/inspections?${params}`);
+        if (!response.ok) throw new Error('读取记录失败');
+        const data = await response.json();
+        total = data.total;
+        document.getElementById('recordCount').textContent = total;
+        document.getElementById('pageSummary').textContent = total
+          ? `第 ${Math.floor(offset / pageSize) + 1} 页 · 共 ${total} 条`
+          : '暂无记录';
+        document.getElementById('previousPage').disabled = offset === 0;
+        document.getElementById('nextPage').disabled = offset + pageSize >= total;
+        if (!data.items.length) {
+          historyRows.innerHTML = '<tr><td class="table-empty" colspan="7">没有符合筛选条件的检测记录。</td></tr>';
+          return;
+        }
+        historyRows.innerHTML = data.items.map(record => `
+          <tr data-id="${record.id}">
+            <td data-label="检测样本"><strong>${escapeHtml(record.source_name)}</strong><span class="table-sub">#${record.id.slice(0, 10).toUpperCase()} · ${escapeHtml(record.project_name || '未命名项目')}</span></td>
+            <td data-label="时间">${localTime(record.created_at)}</td>
+            <td data-label="来源">${escapeHtml(labels[record.source_type] || record.source_type)}</td>
+            <td data-label="候选缺陷"><strong>${record.detection_count}</strong><span class="table-sub">${escapeHtml(Object.keys(record.class_counts || {}).join('、') || '未检出')}</span></td>
+            <td data-label="AI 复核">${badge(record.ai_status)}</td>
+            <td data-label="人工结论">${badge(record.review_decision)}</td>
+            <td data-label="操作"><div class="table-actions"><button class="icon-button" data-open="${record.id}" type="button">详情</button><a class="icon-button" href="${record.pdf_url}" target="_blank" onclick="event.stopPropagation()">PDF</a></div></td>
+          </tr>
+        `).join('');
+        historyRows.querySelectorAll('tr[data-id]').forEach(row => {
+          row.addEventListener('click', () => openRecord(row.dataset.id));
+        });
+        if (requestedRecord) {
+          const recordId = requestedRecord;
+          requestedRecord = '';
+          openRecord(recordId);
+        }
+      } catch (error) {
+        historyRows.innerHTML = `<tr><td class="table-empty" colspan="7">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    function closeDrawer() {
+      clearTimeout(detailPoll);
+      detailDrawer.classList.remove('open');
+      drawerBackdrop.classList.remove('open');
+      detailDrawer.setAttribute('aria-hidden', 'true');
+    }
+
+    async function openRecord(recordId, silent = false) {
+      if (!silent) {
+        detailDrawer.classList.add('open');
+        drawerBackdrop.classList.add('open');
+        detailDrawer.setAttribute('aria-hidden', 'false');
+        drawerBody.innerHTML = '<p class="empty-copy">正在读取完整检测记录…</p>';
+      }
+      try {
+        const response = await fetch(`/api/inspections/${recordId}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || '读取详情失败');
+        activeRecord = data.inspection;
+        renderDetail(activeRecord);
+        if (['queued', 'processing'].includes(activeRecord.ai_status)) {
+          detailPoll = setTimeout(() => openRecord(recordId, true), 1800);
+        }
+      } catch (error) {
+        drawerBody.innerHTML = `<p class="empty-copy">${escapeHtml(error.message)}</p>`;
+      }
+    }
+
+    function renderDetail(record) {
+      document.getElementById('drawerTitle').textContent = record.source_name;
+      document.getElementById('drawerId').textContent = `#${record.id.toUpperCase()} · ${localTime(record.created_at)}`;
+      document.getElementById('pdfButton').href = record.pdf_url;
+      const ai = record.ai_review || {};
+      const rows = (record.detections || []).map((item, index) => `
+        <div class="review-row" data-index="${index}">
+          <span class="review-index">${String(index + 1).padStart(2, '0')}</span>
+          <strong>${escapeHtml(item.class_name)} · ${(Number(item.confidence) * 100).toFixed(1)}%</strong>
+          <select class="select correction-decision">
+            <option value="confirmed">确认正确</option>
+            <option value="false_positive">标记误报</option>
+            <option value="class_changed">修改类别</option>
+          </select>
+          <input class="input correction-class" value="${escapeHtml(item.class_name)}" aria-label="修正后的缺陷类别">
+        </div>
+      `).join('');
+      drawerBody.innerHTML = `
+        <div class="detail-images">
+          <div class="detail-image"><img src="${record.original_image_url}" alt="原始射线底片"></div>
+          <div class="detail-image"><img src="${record.annotated_image_url}" alt="YOLO 标注结果"></div>
+        </div>
+        <div class="detail-meta">
+          <div><span>候选缺陷</span><strong>${record.detection_count}</strong></div>
+          <div><span>检测阈值</span><strong>${Number(record.confidence_threshold).toFixed(2)}</strong></div>
+          <div><span>模型版本</span><strong>${escapeHtml(record.model_version)}</strong></div>
+          <div><span>AI 状态</span><strong>${escapeHtml(labels[record.ai_status] || record.ai_status)}</strong></div>
+        </div>
+        <section class="detail-section">
+          <h3>综合结论</h3>
+          <p>${escapeHtml(record.conclusion || '暂无综合结论。')}</p>
+          <div class="ai-retry-row">
+            ${badge(record.ai_status)}
+            <button class="button" id="retryAiButton" type="button" ${['queued', 'processing'].includes(record.ai_status) ? 'disabled' : ''}>重新 AI 复核</button>
+          </div>
+          <p class="table-sub">${escapeHtml(ai.summary || ai.message || '')}</p>
+        </section>
+        <section class="detail-section">
+          <h3>逐项人工复核</h3>
+          <div class="review-grid">${rows || '<p class="empty-copy">YOLO 未检出候选框，可在下方登记漏检。</p>'}</div>
+        </section>
+        <section class="detail-section">
+          <h3>人工结论与处置意见</h3>
+          <div class="form-grid">
+            <div class="form-field"><label for="reviewDecision">复核结论</label>
+              <select class="select" id="reviewDecision">
+                <option value="accepted">结果接受</option>
+                <option value="confirmed">确认缺陷</option>
+                <option value="false_positive">确认误报</option>
+                <option value="missed_defect">确认漏报</option>
+                <option value="mixed">混合结论</option>
+              </select>
+            </div>
+            <div class="form-field"><label for="reviewerName">复核人员</label><input class="input" id="reviewerName" value="${escapeHtml(record.reviewer || '')}" placeholder="请输入姓名"></div>
+          </div>
+          <div class="form-field" style="margin-top:12px"><label for="missedDefects">漏检登记（每行一个缺陷类型）</label><textarea class="textarea" id="missedDefects" placeholder="例如：未熔合"></textarea></div>
+          <div class="form-field" style="margin-top:12px"><label for="reviewNotes">处置意见</label><textarea class="textarea" id="reviewNotes" placeholder="填写复核依据、返修或复拍建议">${escapeHtml(record.review_notes || '')}</textarea></div>
+          <div class="form-actions"><span class="form-message" id="reviewMessage"></span><button class="button primary" id="saveReviewButton" type="button">保存人工复核</button></div>
+        </section>
+      `;
+      document.getElementById('reviewDecision').value = record.review_decision || 'accepted';
+      document.getElementById('retryAiButton').addEventListener('click', retryAi);
+      document.getElementById('saveReviewButton').addEventListener('click', saveReview);
+    }
+
+    async function retryAi() {
+      const button = document.getElementById('retryAiButton');
+      button.disabled = true;
+      button.textContent = '已加入队列';
+      const response = await fetch(`/api/inspections/${activeRecord.id}/re-review`, { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) {
+        button.disabled = false;
+        button.textContent = data.error || '重新复核失败';
+        return;
+      }
+      await openRecord(activeRecord.id, true);
+      loadRecords();
+    }
+
+    async function saveReview() {
+      const button = document.getElementById('saveReviewButton');
+      const message = document.getElementById('reviewMessage');
+      button.disabled = true;
+      message.className = 'form-message';
+      message.textContent = '正在保存…';
+      const corrections = [...drawerBody.querySelectorAll('.review-row')].map(row => ({
+        detection_index: Number(row.dataset.index),
+        decision: row.querySelector('.correction-decision').value,
+        class_name: row.querySelector('.correction-class').value.trim()
+      }));
+      const missedDefects = document.getElementById('missedDefects').value
+        .split(/\n+/).map(value => value.trim()).filter(Boolean)
+        .map(suspected_type => ({ suspected_type }));
+      const payload = {
+        decision: document.getElementById('reviewDecision').value,
+        reviewer: document.getElementById('reviewerName').value.trim(),
+        notes: document.getElementById('reviewNotes').value.trim(),
+        corrections,
+        missed_defects: missedDefects
+      };
+      try {
+        const response = await fetch(`/api/inspections/${activeRecord.id}/human-review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || '保存失败');
+        message.className = 'form-message success';
+        message.textContent = '人工复核已保存，并已写入训练反馈数据。';
+        activeRecord = data.inspection;
+        loadRecords();
+      } catch (error) {
+        message.className = 'form-message error';
+        message.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    let searchTimer;
+    ['searchInput', 'sourceFilter', 'aiFilter', 'reviewFilter'].forEach(id => {
+      document.getElementById(id).addEventListener(id === 'searchInput' ? 'input' : 'change', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => { offset = 0; loadRecords(); }, 250);
+      });
+    });
+    document.getElementById('refreshButton').addEventListener('click', loadRecords);
+    document.getElementById('previousPage').addEventListener('click', () => { offset = Math.max(0, offset - pageSize); loadRecords(); });
+    document.getElementById('nextPage').addEventListener('click', () => { if (offset + pageSize < total) { offset += pageSize; loadRecords(); } });
+    document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+    drawerBackdrop.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeDrawer(); });
+    if (initialQuery.get('source_type')) {
+      document.getElementById('sourceFilter').value = initialQuery.get('source_type');
+    }
+    loadRecords();
+  </script>
+</body>
+
+</html>

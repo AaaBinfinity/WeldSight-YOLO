@@ -130,6 +130,8 @@ Desktop.ini
 *.sqlite
 *.sqlite3
 *.db
+v-app/data/*
+!v-app/data/.gitkeep
 
 
 # =========================

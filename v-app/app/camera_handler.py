@@ -1,7 +1,7 @@
 import threading
 import time
 import cv2
-from app.inference import render_detections
+from app.inference import run_detections
 
 # 修改：增加 default_cam_index 参数，接收外部传入的默认索引
 def init_camera_global_vars(default_cam_index):
@@ -15,9 +15,15 @@ def init_camera_global_vars(default_cam_index):
         'cam_state': {                 # 摄像头状态（检测结果、时间戳、错误）
             'last_detected': False,
             'last_ts': 0,
-            'error': None
+            'error': None,
+            'detection_count': 0,
+            'detections': [],
+            'last_alert_id': None,
+            'last_alert_ts': 0,
         },
-        'cam_state_lock': threading.Lock()  # 状态锁
+        'cam_state_lock': threading.Lock(),  # 状态锁
+        'alert_recorder': None,
+        'alert_cooldown_seconds': 8,
     }
  
 
@@ -51,12 +57,14 @@ def camera_loop(cam_index, camera_vars, model, conf_thresh):
 
         # 模型检测（异常捕获）
         try:
-            rendered_frame, detected = render_detections(
+            rendered_frame, detections = run_detections(
                 model, frame, conf_thresh
             )
+            detected = bool(detections)
         except Exception as e:
             print(f"❌ 摄像头检测错误: {str(e)}")
             rendered_frame = frame
+            detections = []
             detected = False
 
         # 更新最新帧（JPEG格式，减少传输体积）
@@ -70,6 +78,35 @@ def camera_loop(cam_index, camera_vars, model, conf_thresh):
         with camera_vars['cam_state_lock']:
             camera_vars['cam_state']['last_detected'] = detected
             camera_vars['cam_state']['last_ts'] = time.time()
+            camera_vars['cam_state']['detection_count'] = len(detections)
+            camera_vars['cam_state']['detections'] = detections
+
+        if detected and camera_vars.get('alert_recorder'):
+            now = time.time()
+            with camera_vars['cam_state_lock']:
+                last_alert_ts = camera_vars['cam_state'].get(
+                    'last_alert_ts',
+                    0,
+                )
+            cooldown = float(camera_vars.get('alert_cooldown_seconds', 8))
+            if now - last_alert_ts >= cooldown:
+                original_ok, original_jpeg = cv2.imencode('.jpg', frame)
+                if original_ok:
+                    try:
+                        record = camera_vars['alert_recorder'](
+                            original_jpeg.tobytes(),
+                            jpg_bytes.tobytes(),
+                            detections,
+                            frame.shape[1],
+                            frame.shape[0],
+                        )
+                        with camera_vars['cam_state_lock']:
+                            camera_vars['cam_state']['last_alert_ts'] = now
+                            camera_vars['cam_state']['last_alert_id'] = (
+                                record.get('id') if record else None
+                            )
+                    except Exception as exc:
+                        print(f"❌ 保存实时告警失败: {str(exc)}")
 
         time.sleep(0.01)  
 

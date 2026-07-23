@@ -18,7 +18,8 @@ body {
 }
 
 /* 标题样式优化 */
-h1, h2 {
+h1,
+h2 {
     color: #2c3e50;
     margin: 0 0 25px;
     padding-bottom: 12px;
@@ -26,7 +27,8 @@ h1, h2 {
     display: inline-block;
 }
 
-h1::after, h2::after {
+h1::after,
+h2::after {
     content: '';
     position: absolute;
     left: 10%;
@@ -103,10 +105,12 @@ a:hover::after {
 /* ===== 红色闪烁层 ===== */
 #flash {
     position: absolute;
-    inset: 15px; /* 与容器内边距保持一致 */
+    inset: 15px;
+    /* 与容器内边距保持一致 */
     pointer-events: none;
     mix-blend-mode: screen;
-    border-radius: 10px; /* 与摄像头画面保持一致 */
+    border-radius: 10px;
+    /* 与摄像头画面保持一致 */
     opacity: 0;
     animation: none;
     z-index: 10;
@@ -114,15 +118,35 @@ a:hover::after {
 
 /* 报警闪烁动画（增强版） */
 .flash-active {
-    animation: flashBlink 0.4s ease-in-out 2; /* 持续 0.4s，重复2次 */
+    animation: flashBlink 0.4s ease-in-out 2;
+    /* 持续 0.4s，重复2次 */
 }
 
 @keyframes flashBlink {
-    0% { opacity: 0; background: rgba(255, 0, 0, 0.6); }
-    25% { opacity: 1; background: rgba(255, 0, 0, 0.8); }
-    50% { opacity: 0; background: rgba(255, 0, 0, 0.6); }
-    75% { opacity: 1; background: rgba(255, 0, 0, 0.8); }
-    100% { opacity: 0; background: rgba(255, 0, 0, 0.6); }
+    0% {
+        opacity: 0;
+        background: rgba(255, 0, 0, 0.6);
+    }
+
+    25% {
+        opacity: 1;
+        background: rgba(255, 0, 0, 0.8);
+    }
+
+    50% {
+        opacity: 0;
+        background: rgba(255, 0, 0, 0.6);
+    }
+
+    75% {
+        opacity: 1;
+        background: rgba(255, 0, 0, 0.8);
+    }
+
+    100% {
+        opacity: 0;
+        background: rgba(255, 0, 0, 0.6);
+    }
 }
 
 /* ===== 控件区域 ===== */
@@ -177,7 +201,7 @@ button {
     cursor: pointer;
     transition: all 0.3s ease;
 }
-  
+
 
 /* ===== 文字和段落 ===== */
 p {

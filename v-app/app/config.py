@@ -33,13 +33,31 @@ class Config:
 
     BASE_DIR = str(PROJECT_ROOT / 'v-app')
     UPLOAD_FOLDER = str(PROJECT_ROOT / 'v-app' / 'uploads')
+    DATA_FOLDER = env_path('WELDSIGHT_DATA_FOLDER', 'v-app/data')
+    RECORD_FOLDER = env_path(
+        'WELDSIGHT_RECORD_FOLDER',
+        'v-app/data/records',
+    )
+    BATCH_FOLDER = env_path(
+        'WELDSIGHT_BATCH_FOLDER',
+        'v-app/data/batches',
+    )
+    DATABASE_PATH = env_path(
+        'WELDSIGHT_DATABASE_PATH',
+        'v-app/data/weldsight.db',
+    )
     MODEL_PATH = env_path(
         'YOLO_MODEL_PATH',
         'v-app/best_v8.pt',
     )
 
     CONF_THRESH = float(os.environ.get('CONF_THRESH', '0.25'))
+    YOLO_MODEL_VERSION = os.environ.get('YOLO_MODEL_VERSION', 'YOLOv11')
     CAMERA_DEFAULT_INDEX = int(os.environ.get('CAMERA_DEFAULT_INDEX', '0'))
+    ALERT_COOLDOWN_SECONDS = int(
+        os.environ.get('ALERT_COOLDOWN_SECONDS', '8')
+    )
+    BATCH_MAX_IMAGES = int(os.environ.get('BATCH_MAX_IMAGES', '50'))
     VIDEO_MAX_PROGRESS_CACHE = int(
         os.environ.get('VIDEO_MAX_PROGRESS_CACHE', '30')
     )
@@ -65,3 +83,10 @@ class Config:
     KIMI_RETRY_BASE_SECONDS = float(
         os.environ.get('KIMI_RETRY_BASE_SECONDS', '1')
     )
+
+    PROJECT_NAME = os.environ.get(
+        'WELDSIGHT_PROJECT_NAME',
+        '焊缝质量检测',
+    )
+    ORGANIZATION = os.environ.get('WELDSIGHT_ORGANIZATION', '')
+    DEFAULT_REVIEWER = os.environ.get('WELDSIGHT_DEFAULT_REVIEWER', '')
